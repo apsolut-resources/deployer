@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types=1);
 /* (c) Anton Medvedev <anton@medv.io>
  *
  * For the full copyright and license information, please view the LICENSE
@@ -7,99 +7,53 @@
 
 namespace Deployer\Collection;
 
-class Collection implements CollectionInterface, \Countable
+use Countable;
+use IteratorAggregate;
+
+class Collection implements Countable, IteratorAggregate
 {
-    /**
-     * @var array
-     */
     protected $values = [];
 
-    public function __construct(array $collection = [])
+    public function all(): array
     {
-        $this->values = $collection;
+        return $this->values;
     }
 
     /**
-     * {@inheritdoc}
+     * @return mixed
      */
-    public function get($name)
+    public function get(string $name)
     {
         if ($this->has($name)) {
             return $this->values[$name];
         } else {
-            return $this->throwNotFound($name);
+            $this->throwNotFound($name);
         }
     }
 
-    /**
-     * {@inheritdoc}
-     */
-    public function has($name)
+    public function has(string $name): bool
     {
         return array_key_exists($name, $this->values);
     }
 
     /**
-     * {@inheritdoc}
+     * @param mixed $object
      */
-    public function set($name, $object)
+    public function set(string $name, $object)
     {
         $this->values[$name] = $object;
     }
 
-    /**
-     * {@inheritdoc}
-     */
-    public function getIterator()
-    {
-        return new \ArrayIterator($this->values);
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function offsetExists($offset)
-    {
-        return $this->has($offset);
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function offsetGet($offset)
-    {
-        return $this->get($offset);
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function offsetSet($offset, $value)
-    {
-        $this->set($offset, $value);
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function offsetUnset($offset)
-    {
-        unset($this->values[$offset]);
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function count()
+    public function count(): int
     {
         return count($this->values);
     }
 
-    public function select(callable $callback)
+    public function select(callable $callback): array
     {
         $values = [];
 
-        foreach ($this as $key => $value) {
+        foreach ($this->values as $key => $value) {
             if ($callback($value, $key)) {
                 $values[$key] = $value;
             }
@@ -108,21 +62,16 @@ class Collection implements CollectionInterface, \Countable
         return $values;
     }
 
-    public function first()
-    {
-        return array_values($this->values)[0];
-    }
-
     /**
-     * @return array
+     * @return \ArrayIterator|\Traversable
      */
-    public function toArray()
+    public function getIterator()
     {
-        return iterator_to_array($this);
+        return new \ArrayIterator($this->values);
     }
 
-    protected function throwNotFound(string $name)
+    protected function throwNotFound(string $name): void
     {
-        throw new \InvalidArgumentException("`$name` not found in collection.");
+        throw new \InvalidArgumentException("Element \"$name\" not found in collection.");
     }
 }

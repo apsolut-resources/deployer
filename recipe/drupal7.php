@@ -1,29 +1,17 @@
 <?php
-/* (c) Sergio Carracedo <info@sergiocarraedo.es>
- *
- * For the full copyright and license information, please view the LICENSE
- * file that was distributed with this source code.
- */
-
 namespace Deployer;
 
 require_once __DIR__ . '/common.php';
 
+add('recipes', ['drupal7']);
+
 task('deploy', [
-    'deploy:info',
     'deploy:prepare',
-    'deploy:lock',
-    'deploy:release',
-    'deploy:update_code',
-    'deploy:shared',
-    'deploy:symlink',
-    'deploy:unlock',
-    'cleanup'
+    'deploy:publish',
 ]);
 
 //Set Drupal 7 site. Change if you use different site
 set('drupal_site', 'default');
-
 
 //Drupal 7 shared dirs
 set('shared_dirs', [
@@ -44,7 +32,9 @@ set('writable_dirs', [
 //Create and upload Drupal 7 settings.php using values from secrets
 task('drupal:settings', function () {
     if (askConfirmation('Are you sure to generate and upload settings.php file?')) {
-        $basepath = dirname(__FILE__) . '/drupal7';
+
+        //Get template
+        $template = get('settings_template');
 
         //Import secrets
         $secrets = get('settings');
@@ -66,13 +56,13 @@ task('drupal:settings', function () {
         }
 
         //Create settings from template
-        $settings = file_get_contents($basepath . '/settings.php');
+        $settings = file_get_contents($template);
 
         $settings = strtr($settings, $replacements);
 
-        writeln('settings.php created succesfuly');
+        writeln('settings.php created successfully');
 
-        $tmpFilename = tempnam($basepath, 'tmp_settings_');
+        $tmpFilename = tempnam(sys_get_temp_dir(), 'tmp_settings_');
         file_put_contents($tmpFilename, $settings);
 
         upload($tmpFilename, '{{deploy_path}}/shared/sites/{{drupal_site}}/settings.php');
