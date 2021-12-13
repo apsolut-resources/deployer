@@ -7,9 +7,11 @@
 
 namespace Deployer;
 
+use Deployer\Exception\Exception;
 use Deployer\Exception\GracefulShutdownException;
 use Deployer\Exception\RunException;
 use Deployer\Exception\TimeoutException;
+use Deployer\Exception\WillAskUser;
 use Deployer\Host\Host;
 use Deployer\Host\Localhost;
 use Deployer\Host\Range;
@@ -18,6 +20,7 @@ use Deployer\Support\ObjectProxy;
 use Deployer\Task\Context;
 use Deployer\Task\GroupTask;
 use Deployer\Task\Task;
+use Deployer\Utility\Httpie;
 use Symfony\Component\Console\Helper\QuestionHelper;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
@@ -31,23 +34,33 @@ use function Deployer\Support\is_closure;
 use function Deployer\Support\str_contains;
 
 /**
- * @return Host|Host[]|ObjectProxy
+ * Defines a host or hosts.
+ * ```php
+ * host('example.org');
+ * host('prod.example.org', 'staging.example.org');
+ * ```
+ *
+ * Inside task can be used to get `Host` instance of an alias.
+ * ```php
+ * task('test', function () {
+ *     $port = host('example.org')->get('port');
+ * });
+ * ```
+ *
+ * @return Host|ObjectProxy
  */
 function host(string ...$hostname)
 {
     $deployer = Deployer::get();
+    if (count($hostname) === 1 && $deployer->hosts->has($hostname[0])) {
+        return $deployer->hosts->get($hostname[0]);
+    }
     $aliases = Range::expand($hostname);
 
     foreach ($aliases as $alias) {
         if ($deployer->hosts->has($alias)) {
             $host = $deployer->hosts->get($alias);
-            throw new \InvalidArgumentException(
-                "Host \"{$host->getTag()}\" already exists.\n" .
-                "If you want to override configuration options, get host with <fg=yellow>getHost</> function.\n" .
-                "\n" .
-                "    <fg=yellow>getHost</>(<fg=green>'{$alias}'</>);" .
-                "\n"
-            );
+            throw new \InvalidArgumentException("Host \"$host\" already exists.");
         }
     }
 
@@ -56,7 +69,7 @@ function host(string ...$hostname)
         $deployer->hosts->set($aliases[0], $host);
         return $host;
     } else {
-        $hosts = array_map(function ($hostname) use ($deployer) : Host {
+        $hosts = array_map(function ($hostname) use ($deployer): Host {
             $host = new Host($hostname);
             $deployer->hosts->set($hostname, $host);
             return $host;
@@ -66,7 +79,7 @@ function host(string ...$hostname)
 }
 
 /**
- * @return Localhost|Localhost[]|ObjectProxy
+ * @return Localhost|ObjectProxy
  */
 function localhost(string ...$hostnames)
 {
@@ -88,17 +101,7 @@ function localhost(string ...$hostnames)
 }
 
 /**
- * Get host by host alias.
- *
- */
-function getHost(string $alias): Host
-{
-    return Deployer::get()->hosts->get($alias);
-}
-
-/**
  * Returns current host.
- *
  */
 function currentHost(): Host
 {
@@ -109,7 +112,7 @@ function currentHost(): Host
  * Returns hosts based on provided selector.
  *
  * ```php
- * on(select('stage=prod, role=db'), function ($host) {
+ * on(select('stage=prod, role=db'), function (Host $host) {
  *     ...
  * });
  * ```
@@ -119,6 +122,20 @@ function currentHost(): Host
 function select(string $selector): array
 {
     return Deployer::get()->selector->select($selector);
+}
+
+/**
+ * Returns array of hosts selected by user via CLI.
+ *
+ * @return Host[]
+ */
+function selectedHosts(): array
+{
+    $hosts = [];
+    foreach (get('selected_hosts', []) as $alias) {
+        $hosts[] = Deployer::get()->hosts->get($alias);
+    }
+    return $hosts;
 }
 
 /**
@@ -132,7 +149,7 @@ function select(string $selector): array
  * import(__DIR__ . '/config/hosts.yaml');
  * ```
  *
- * @throws Exception\Exception
+ * @throws Exception
  */
 function import(string $file): void
 {
@@ -159,7 +176,7 @@ function desc(?string $title = null): ?string
  * Alternatively get a defined task.
  *
  * @param string $name Name of current task.
- * @param callable|array|string|null $body Callable task, array of other tasks names or nothing to get a defined tasks
+ * @param callable|array|null $body Callable task, array of other tasks names or nothing to get a defined tasks
  */
 function task(string $name, $body = null): Task
 {
@@ -174,7 +191,7 @@ function task(string $name, $body = null): Task
     } elseif (is_array($body)) {
         $task = new GroupTask($name, $body);
     } else {
-        throw new \InvalidArgumentException('Task should be a closure or array of other tasks.');
+        throw new \InvalidArgumentException('Task body should be a function or an array.');
     }
 
     $task->saveSourceLocation();
@@ -295,19 +312,13 @@ function within(string $path, callable $callback)
 /**
  * Executes given command on remote host.
  *
- * Options:
- * - `timeout` - Sets the process timeout (max. runtime). The timeout in seconds (default: 300 sec; see {{default_timeout}}, `null` to disable).
- * - `idle_timeout` - Sets the process idle timeout (max. time since last output) in seconds.
- * - `secret` - Placeholder `%secret%` can be used in command. Placeholder will be replaced with this value and will not appear in any logs.
- * - `vars` - Array of placeholders to replace in command: `run('echo %key%', ['vars' => ['key' => 'anything does here']]);`
- * - `env` - Array of environment variables: `run('echo $KEY', ['env' => ['key' => 'value']]);`
- *
  * Examples:
  *
  * ```php
  * run('echo hello world');
  * run('cd {{deploy_path}} && git status');
- * run('password %secret%', ['secret' => getenv('CI_SECRET')]);
+ * run('password %secret%', secret: getenv('CI_SECRET'));
+ * run('curl medv.io', timeout: 5);
  * ```
  *
  * ```php
@@ -315,14 +326,28 @@ function within(string $path, callable $callback)
  * run("echo $path");
  * ```
  *
- * @param array $options
+ * @param string $command Command to run on remote host.
+ * @param array|null $options Array of options will override passed named arguments.
+ * @param int|null $timeout Sets the process timeout (max. runtime). The timeout in seconds (default: 300 sec; see {{default_timeout}}, `null` to disable).
+ * @param int|null $idle_timeout Sets the process idle timeout (max. time since last output) in seconds.
+ * @param string|null $secret Placeholder `%secret%` can be used in command. Placeholder will be replaced with this value and will not appear in any logs.
+ * @param array|null $env Array of environment variables: `run('echo $KEY', env: ['key' => 'value']);`
+ * @param bool|null $real_time_output Print command output in real-time.
+ * @param bool|null $no_throw Don't throw an exception of non-zero exit code.
  *
- * @throws RunException|TimeoutException
+ * @throws Exception|RunException|TimeoutException
  */
-function run(string $command, array $options = []): string
+function run(string $command, ?array $options = [], ?int $timeout = null, ?int $idle_timeout = null, ?string $secret = null, ?array $env = null, ?bool $real_time_output = false, ?bool $no_throw = false): string
 {
+    $namedArguments = [];
+    foreach (['timeout', 'idle_timeout', 'secret', 'env', 'real_time_output', 'no_throw'] as $arg) {
+        if ($$arg !== null) {
+            $namedArguments[$arg] = $$arg;
+        }
+    }
+    $options = array_merge($namedArguments, $options);
     $run = function ($command, $options = []): string {
-        $host = Context::get()->getHost();
+        $host = currentHost();
 
         $command = parse($command);
         $workingPath = get('working_path', '');
@@ -361,7 +386,7 @@ function run(string $command, array $options = []): string
             $password = get('sudo_pass', false);
             if ($password === false) {
                 writeln("<fg=green;options=bold>run</> $command");
-                $password = askHiddenResponse('Password:');
+                $password = askHiddenResponse(" [sudo] password for {{remote_user}}: ");
             }
             $run("echo -e '#!/bin/sh\necho \"\$PASSWORD\"' > $askpass");
             $run("chmod a+x $askpass");
@@ -377,17 +402,35 @@ function run(string $command, array $options = []): string
 
 
 /**
- * Execute commands on local machine
+ * Execute commands on a local machine.
  *
- * @param string $command Command to run locally.
- * @param array $options
+ * Examples:
  *
- * @return string Output of command.
+ * ```php
+ * $user = runLocally('git config user.name');
+ * runLocally("echo $user");
+ * ```
+ *
+ * @param string $command Command to run on localhost.
+ * @param array|null $options Array of options will override passed named arguments.
+ * @param int|null $timeout Sets the process timeout (max. runtime). The timeout in seconds (default: 300 sec, `null` to disable).
+ * @param int|null $idle_timeout Sets the process idle timeout (max. time since last output) in seconds.
+ * @param string|null $secret Placeholder `%secret%` can be used in command. Placeholder will be replaced with this value and will not appear in any logs.
+ * @param array|null $env Array of environment variables: `runLocally('echo $KEY', env: ['key' => 'value']);`
+ * @param string|null $shell Shell to run in. Default is `bash -s`.
  *
  * @throws RunException
  */
-function runLocally(string $command, array $options = []): string
+function runLocally(string $command, ?array $options = [], ?int $timeout = null, ?int $idle_timeout = null, ?string $secret = null, ?array $env = null, ?string $shell = null): string
 {
+    $namedArguments = [];
+    foreach (['timeout', 'idle_timeout', 'secret', 'env', 'shell'] as $arg) {
+        if ($$arg !== null) {
+            $namedArguments[$arg] = $$arg;
+        }
+    }
+    $options = array_merge($namedArguments, $options);
+
     $process = Deployer::get()->processRunner;
     $command = parse($command);
 
@@ -397,7 +440,7 @@ function runLocally(string $command, array $options = []): string
         $command = "export $env; $command";
     }
 
-    $output = $process->run(new Localhost(), $command, $options);
+    $output = $process->run(currentHost(), $command, $options);
 
     return rtrim($output);
 }
@@ -412,11 +455,11 @@ function runLocally(string $command, array $options = []): string
  * }
  * ```
  *
- * @throws RunException
  */
 function test(string $command): bool
 {
-    return run("if $command; then echo 'true'; fi") === 'true';
+    $true = '+' . array_rand(array_flip(['accurate', 'appropriate', 'correct', 'legitimate', 'precise', 'right', 'true', 'yes', 'indeed']));
+    return run("if $command; then echo $true; fi") === $true;
 }
 
 /**
@@ -425,11 +468,10 @@ function test(string $command): bool
  *
  *     testLocally('[ -d {{local_release_path}} ]')
  *
- * @throws RunException
  */
 function testLocally(string $command): bool
 {
-    return runLocally("if $command; then echo 'true'; fi") === 'true';
+    return runLocally("if $command; then echo +true; fi") === '+true';
 }
 
 /**
@@ -442,7 +484,7 @@ function testLocally(string $command): bool
  * ```
  *
  * ```php
- * on(getHost('prod'), function ($host) {
+ * on(host('example.org'), function ($host) {
  *     ...
  * });
  * ```
@@ -464,7 +506,7 @@ function on($hosts, callable $callback): void
     foreach ($hosts as $host) {
         if ($host instanceof Host) {
             $host->config()->load();
-            Context::push(new Context($host, input(), output()));
+            Context::push(new Context($host));
             try {
                 $callback($host);
                 $host->config()->save();
@@ -485,7 +527,7 @@ function on($hosts, callable $callback): void
  * invoke('deploy:symlink');
  * ```
  *
- * @throws Exception\Exception
+ * @throws Exception
  */
 function invoke(string $taskName): void
 {
@@ -502,15 +544,25 @@ function invoke(string $taskName): void
  * >
  * > The alternative, without the trailing slash, would place build, including the directory, within public. This would create a hierarchy that looks like: {{release_path}}/public/build
  *
+ *  The `$config` array supports the following keys:
+ *
+ * - `flags` for overriding the default `-azP` passed to the `rsync` command
+ * - `options` with additional flags passed directly to the `rsync` command
+ * - `timeout` for `Process::fromShellCommandline()` (`null` by default)
+ * - `progress_bar` to display upload/download progress
+ * - `display_stats' to display rsync set of statistics
+ *
+ * @param string|string[] $source
  * @param array $config
+ * @phpstan-param array{flags?: string, options?: array, timeout?: int|null, progress_bar?: bool, display_stats?: bool} $config
  *
  * @throws RunException
  */
-function upload(string $source, string $destination, array $config = []): void
+function upload($source, string $destination, array $config = []): void
 {
     $rsync = Deployer::get()->rsync;
     $host = currentHost();
-    $source = parse($source);
+    $source = is_array($source) ? array_map('Deployer\parse', $source) : parse($source);
     $destination = parse($destination);
 
     if ($host instanceof Localhost) {
@@ -570,7 +622,7 @@ function warning(string $message): void
 function writeln($message, int $options = 0): void
 {
     $host = currentHost();
-    output()->writeln("[{$host->getTag()}] " . parse($message), $options);
+    output()->writeln("[$host] " . parse($message), $options);
 }
 
 /**
@@ -637,11 +689,11 @@ function has(string $name): bool
     }
 }
 
-/**
- * @param string[]|null $autocomplete
- */
 function ask(string $message, ?string $default = null, ?array $autocomplete = null): ?string
 {
+    if (defined('DEPLOYER_NO_ASK')) {
+        throw new WillAskUser($message);
+    }
     Context::required(__FUNCTION__);
 
     if (output()->isQuiet()) {
@@ -656,6 +708,7 @@ function ask(string $message, ?string $default = null, ?array $autocomplete = nu
     $helper = Deployer::get()->getHelper('question');
 
     $tag = currentHost()->getTag();
+    $message = parse($message);
     $message = "[$tag] <question>$message</question> " . (($default === null) ? "" : "(default: $default) ");
 
     $question = new Question($message, $default);
@@ -667,13 +720,15 @@ function ask(string $message, ?string $default = null, ?array $autocomplete = nu
 }
 
 /**
- * @param string[] $availableChoices
- * @param bool|false $multiselect
- *
- * @return string|string[]
+ * @param mixed $default
+ * @return mixed
+ * @throws Exception
  */
-function askChoice(string $message, array $availableChoices, ?string $default = null, bool $multiselect = false)
+function askChoice(string $message, array $availableChoices, $default = null, bool $multiselect = false)
 {
+    if (defined('DEPLOYER_NO_ASK')) {
+        throw new WillAskUser($message);
+    }
     Context::required(__FUNCTION__);
 
     if (empty($availableChoices)) {
@@ -699,6 +754,7 @@ function askChoice(string $message, array $availableChoices, ?string $default = 
     $helper = Deployer::get()->getHelper('question');
 
     $tag = currentHost()->getTag();
+    $message = parse($message);
     $message = "[$tag] <question>$message</question> " . (($default === null) ? "" : "(default: $default) ");
 
     $question = new ChoiceQuestion($message, $availableChoices, $default);
@@ -709,6 +765,9 @@ function askChoice(string $message, array $availableChoices, ?string $default = 
 
 function askConfirmation(string $message, bool $default = false): bool
 {
+    if (defined('DEPLOYER_NO_ASK')) {
+        throw new WillAskUser($message);
+    }
     Context::required(__FUNCTION__);
 
     if (output()->isQuiet()) {
@@ -724,6 +783,7 @@ function askConfirmation(string $message, bool $default = false): bool
 
     $yesOrNo = $default ? 'Y/n' : 'y/N';
     $tag = currentHost()->getTag();
+    $message = parse($message);
     $message = "[$tag] <question>$message</question> [$yesOrNo] ";
 
     $question = new ConfirmationQuestion($message, $default);
@@ -733,6 +793,9 @@ function askConfirmation(string $message, bool $default = false): bool
 
 function askHiddenResponse(string $message): string
 {
+    if (defined('DEPLOYER_NO_ASK')) {
+        throw new WillAskUser($message);
+    }
     Context::required(__FUNCTION__);
 
     if (output()->isQuiet()) {
@@ -740,30 +803,31 @@ function askHiddenResponse(string $message): string
     }
 
     if (Deployer::isWorker()) {
-        return (string) Deployer::proxyCallToMaster(currentHost(), __FUNCTION__, ...func_get_args());
+        return (string)Deployer::proxyCallToMaster(currentHost(), __FUNCTION__, ...func_get_args());
     }
 
     /** @var QuestionHelper */
     $helper = Deployer::get()->getHelper('question');
 
     $tag = currentHost()->getTag();
+    $message = parse($message);
     $message = "[$tag] <question>$message</question> ";
 
     $question = new Question($message);
     $question->setHidden(true);
     $question->setHiddenFallback(false);
 
-    return (string) $helper->ask(input(), output(), $question);
+    return (string)$helper->ask(input(), output(), $question);
 }
 
 function input(): InputInterface
 {
-    return Context::get()->getInput();
+    return Deployer::get()->input;
 }
 
 function output(): OutputInterface
 {
-    return Context::get()->getOutput();
+    return Deployer::get()->output;
 }
 
 /**
@@ -791,7 +855,7 @@ function commandSupportsOption(string $command, string $option): bool
 /**
  * @throws RunException
  */
-function locateBinaryPath(string $name): string
+function which(string $name): string
 {
     $nameEscaped = escapeshellarg($name);
 
@@ -806,4 +870,65 @@ function locateBinaryPath(string $name): string
     // Deal with issue when `type -p` outputs something like `type -ap` in some implementations
     return trim(str_replace("$name is", "", $path));
 
+}
+
+/**
+ * Returns remote environments variables as an array.
+ * ```php
+ * $remotePath = remoteEnv()['PATH'];
+ * run('echo $PATH', env: ['PATH' => "/home/user/bin:$remotePath"]);
+ * ```
+ */
+function remoteEnv(): array
+{
+    $vars = [];
+    $data = run('env');
+    foreach (explode("\n", $data) as $line) {
+        list($name, $value) = explode('=', $line, 2);
+        $vars[$name] = $value;
+    }
+    return $vars;
+}
+
+/**
+ * Creates a new exception.
+ */
+function error(string $message): Exception
+{
+    return new Exception(parse($message));
+}
+
+/**
+ * Returns current timestamp in UTC timezone in ISO8601 format.
+ */
+function timestamp(): string
+{
+    return (new \DateTime('now', new \DateTimeZone('UTC')))->format(\DateTime::ISO8601);
+}
+
+/**
+ * Example usage:
+ * ```php
+ * $result = fetch('{{domain}}', info: $info);
+ * var_dump($info['http_code'], $result);
+ * ```
+ */
+function fetch(string $url, string $method = 'get', array $headers = [], ?string $body = null, ?array &$info = null, bool $nothrow = false): string
+{
+    $url = parse($url);
+    if (strtolower($method) === 'get') {
+        $http = Httpie::get($url);
+    } elseif (strtolower($method) === 'post') {
+        $http = Httpie::post($url);
+    } else {
+        throw new \InvalidArgumentException("Unknown method \"$method\".");
+    }
+    $http = $http->nothrow($nothrow);
+    foreach ($headers as $key => $value) {
+        $http = $http->header($key, $value);
+    }
+    if ($body !== null) {
+        $http = $http->body($body);
+    }
+    return $http->send($info);
 }

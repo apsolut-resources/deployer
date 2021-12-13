@@ -6,55 +6,81 @@
 
 [Source](/recipe/typo3.php)
 
+* Requires
+  * [common](/docs/recipe/common.md)
 
-
-* Require
-  * [`recipe/common.php`](/docs/recipe/common.md)
-* Config
-  * [`typo3_webroot`](#typo3_webroot)
-  * [`shared_dirs`](#shared_dirs)
-  * [`shared_files`](#shared_files)
-  * [`writable_dirs`](#writable_dirs)
-* Tasks
-  * [`deploy`](#deploy) — Deploy your project
-
-## Config
+## Configuration
 ### typo3_webroot
-[Source](https://github.com/deployphp/deployer/search?q=%22typo3_webroot%22+in%3Afile+language%3Aphp+path%3Arecipe+filename%3Atypo3.php)
+[Source](https://github.com/deployphp/deployer/blob/master/recipe/typo3.php#L11)
 
 DocumentRoot / WebRoot for the TYPO3 installation
 
-### shared_dirs
-[Source](https://github.com/deployphp/deployer/search?q=%22shared_dirs%22+in%3Afile+language%3Aphp+path%3Arecipe+filename%3Atypo3.php)
+```php title="Default value"
+'Web'
+```
 
-* Overrides [`shared_dirs`](/docs/recipe/common.md#shared_dirs) from `recipe/common.php`
+
+### shared_dirs
+[Source](https://github.com/deployphp/deployer/blob/master/recipe/typo3.php#L26)
+
+Overrides [shared_dirs](/docs/recipe/deploy/shared.md#shared_dirs) from `recipe/deploy/shared.php`.
 
 Shared directories
 
-### shared_files
-[Source](https://github.com/deployphp/deployer/search?q=%22shared_files%22+in%3Afile+language%3Aphp+path%3Arecipe+filename%3Atypo3.php)
+```php title="Default value"
+[
+    '{{typo3_webroot}}/fileadmin',
+    '{{typo3_webroot}}/typo3temp',
+    '{{typo3_webroot}}/uploads'
+]
+```
 
-* Overrides [`shared_files`](/docs/recipe/common.md#shared_files) from `recipe/common.php`
+
+### shared_files
+[Source](https://github.com/deployphp/deployer/blob/master/recipe/typo3.php#L35)
+
+Overrides [shared_files](/docs/recipe/deploy/shared.md#shared_files) from `recipe/deploy/shared.php`.
 
 Shared files
 
-### writable_dirs
-[Source](https://github.com/deployphp/deployer/search?q=%22writable_dirs%22+in%3Afile+language%3Aphp+path%3Arecipe+filename%3Atypo3.php)
+```php title="Default value"
+[
+    '{{typo3_webroot}}/.htaccess'
+]
+```
 
-* Overrides [`writable_dirs`](/docs/recipe/deploy/writable.md#writable_dirs) from `recipe/deploy/writable.php`
+
+### writable_dirs
+[Source](https://github.com/deployphp/deployer/blob/master/recipe/typo3.php#L42)
+
+Overrides [writable_dirs](/docs/recipe/deploy/writable.md#writable_dirs) from `recipe/deploy/writable.php`.
 
 Writeable directories
 
+```php title="Default value"
+[
+    '{{typo3_webroot}}/fileadmin',
+    '{{typo3_webroot}}/typo3temp',
+    '{{typo3_webroot}}/typo3conf',
+    '{{typo3_webroot}}/uploads'
+]
+```
+
+
 
 ## Tasks
+
 ### deploy
-[Source](https://github.com/deployphp/deployer/search?q=%22deploy%22+in%3Afile+language%3Aphp+path%3Arecipe+filename%3Atypo3.php)
+[Source](https://github.com/deployphp/deployer/blob/master/recipe/typo3.php#L17)
+
+Deploys your project.
 
 Main TYPO3 task
 
+
 This task is group task which contains next tasks:
-* [`deploy:prepare`](/docs/recipe/common.md#deployprepare)
-* [`deploy:vendors`](/docs/recipe/deploy/vendors.md#deployvendors)
-* [`deploy:publish`](/docs/recipe/common.md#deploypublish)
+* [deploy:prepare](/docs/recipe/common.md#deployprepare)
+* [deploy:vendors](/docs/recipe/deploy/vendors.md#deployvendors)
+* [deploy:publish](/docs/recipe/common.md#deploypublish)
 
 

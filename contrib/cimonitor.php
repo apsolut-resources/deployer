@@ -91,7 +91,7 @@ set('cimonitor_job_state_warning', get('cimonitor_status_warning'));
 set('cimonitor_job_state_error', get('cimonitor_status_error'));
 set('cimonitor_job_state_success', get('cimonitor_status_success'));
 
-desc('Notifying CIMonitor');
+desc('Notifies CIMonitor');
 task('cimonitor:notify', function () {
     if (!get('cimonitor_webhook', false)) {
         return;
@@ -112,13 +112,12 @@ task('cimonitor:notify', function () {
         ],
     ];
 
-    Httpie::post(get('cimonitor_webhook'))->body($body)->send();
+    Httpie::post(get('cimonitor_webhook'))->jsonBody($body)->send();
 })
     ->once()
-    ->shallow()
     ->hidden();
 
-desc('Notifying CIMonitor about deploy finish');
+desc('Notifies CIMonitor about deploy finish');
 task('cimonitor:notify:success', function () {
     if (!get('cimonitor_webhook', false)) {
         return;
@@ -141,13 +140,12 @@ task('cimonitor:notify:success', function () {
         ],
     ];
 
-    Httpie::post(get('cimonitor_webhook'))->body($body)->send();
+    Httpie::post(get('cimonitor_webhook'))->jsonBody($body)->send();
 })
     ->once()
-    ->shallow()
     ->hidden();
 
-desc('Notifying CIMonitor about deploy failure');
+desc('Notifies CIMonitor about deploy failure');
 task('cimonitor:notify:failure', function () {
     if (!get('cimonitor_webhook', false)) {
         return;
@@ -168,9 +166,8 @@ task('cimonitor:notify:failure', function () {
         ],
     ];
 
-    Httpie::post(get('cimonitor_webhook'))->body($body)->send();
+    Httpie::post(get('cimonitor_webhook'))->jsonBody($body)->send();
 })
     ->once()
-    ->shallow()
     ->hidden();
 

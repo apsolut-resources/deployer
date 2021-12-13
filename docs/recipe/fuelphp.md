@@ -6,33 +6,38 @@
 
 [Source](/recipe/fuelphp.php)
 
+* Requires
+  * [common](/docs/recipe/common.md)
 
-
-* Require
-  * [`recipe/common.php`](/docs/recipe/common.md)
-* Config
-  * [`shared_dirs`](#shared_dirs)
-* Tasks
-  * [`deploy`](#deploy) — Deploy your project
-
-## Config
+## Configuration
 ### shared_dirs
-[Source](https://github.com/deployphp/deployer/search?q=%22shared_dirs%22+in%3Afile+language%3Aphp+path%3Arecipe+filename%3Afuelphp.php)
+[Source](https://github.com/deployphp/deployer/blob/master/recipe/fuelphp.php#L9)
 
-* Overrides [`shared_dirs`](/docs/recipe/common.md#shared_dirs) from `recipe/common.php`
+Overrides [shared_dirs](/docs/recipe/deploy/shared.md#shared_dirs) from `recipe/deploy/shared.php`.
 
 FuelPHP 1.x shared dirs
 
+```php title="Default value"
+[
+    'fuel/app/cache', 'fuel/app/logs',
+]
+```
+
+
 
 ## Tasks
+
 ### deploy
-[Source](https://github.com/deployphp/deployer/search?q=%22deploy%22+in%3Afile+language%3Aphp+path%3Arecipe+filename%3Afuelphp.php)
+[Source](https://github.com/deployphp/deployer/blob/master/recipe/fuelphp.php#L17)
+
+Deploys your project.
 
 Main task
 
+
 This task is group task which contains next tasks:
-* [`deploy:prepare`](/docs/recipe/common.md#deployprepare)
-* [`deploy:vendors`](/docs/recipe/deploy/vendors.md#deployvendors)
-* [`deploy:publish`](/docs/recipe/common.md#deploypublish)
+* [deploy:prepare](/docs/recipe/common.md#deployprepare)
+* [deploy:vendors](/docs/recipe/deploy/vendors.md#deployvendors)
+* [deploy:publish](/docs/recipe/common.md#deploypublish)
 
 

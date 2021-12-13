@@ -6,41 +6,48 @@
 
 [Source](/recipe/yii.php)
 
+* Requires
+  * [common](/docs/recipe/common.md)
 
-
-* Require
-  * [`recipe/common.php`](/docs/recipe/common.md)
-* Config
-  * [`shared_dirs`](#shared_dirs)
-  * [`writable_dirs`](#writable_dirs)
-* Tasks
-  * [`deploy`](#deploy) — Deploy your project
-
-## Config
+## Configuration
 ### shared_dirs
-[Source](https://github.com/deployphp/deployer/search?q=%22shared_dirs%22+in%3Afile+language%3Aphp+path%3Arecipe+filename%3Ayii.php)
+[Source](https://github.com/deployphp/deployer/blob/master/recipe/yii.php#L9)
 
-* Overrides [`shared_dirs`](/docs/recipe/common.md#shared_dirs) from `recipe/common.php`
+Overrides [shared_dirs](/docs/recipe/deploy/shared.md#shared_dirs) from `recipe/deploy/shared.php`.
 
 Yii shared dirs
 
-### writable_dirs
-[Source](https://github.com/deployphp/deployer/search?q=%22writable_dirs%22+in%3Afile+language%3Aphp+path%3Arecipe+filename%3Ayii.php)
+```php title="Default value"
+['runtime']
+```
 
-* Overrides [`writable_dirs`](/docs/recipe/deploy/writable.md#writable_dirs) from `recipe/deploy/writable.php`
+
+### writable_dirs
+[Source](https://github.com/deployphp/deployer/blob/master/recipe/yii.php#L12)
+
+Overrides [writable_dirs](/docs/recipe/deploy/writable.md#writable_dirs) from `recipe/deploy/writable.php`.
 
 Yii writable dirs
 
+```php title="Default value"
+['runtime']
+```
+
+
 
 ## Tasks
+
 ### deploy
-[Source](https://github.com/deployphp/deployer/search?q=%22deploy%22+in%3Afile+language%3Aphp+path%3Arecipe+filename%3Ayii.php)
+[Source](https://github.com/deployphp/deployer/blob/master/recipe/yii.php#L18)
+
+Deploys your project.
 
 Main task
 
+
 This task is group task which contains next tasks:
-* [`deploy:prepare`](/docs/recipe/common.md#deployprepare)
-* [`deploy:vendors`](/docs/recipe/deploy/vendors.md#deployvendors)
-* [`deploy:publish`](/docs/recipe/common.md#deploypublish)
+* [deploy:prepare](/docs/recipe/common.md#deployprepare)
+* [deploy:vendors](/docs/recipe/deploy/vendors.md#deployvendors)
+* [deploy:publish](/docs/recipe/common.md#deploypublish)
 
 

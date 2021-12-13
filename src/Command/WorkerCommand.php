@@ -10,10 +10,10 @@ namespace Deployer\Command;
 use Deployer\Deployer;
 use Deployer\Executor\Worker;
 use Deployer\Host\Localhost;
-use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption as Option;
 use Symfony\Component\Console\Output\OutputInterface;
+use function Deployer\localhost;
 
 class WorkerCommand extends MainCommand
 {
@@ -36,30 +36,21 @@ class WorkerCommand extends MainCommand
     {
         $this->deployer->input = $input;
         $this->deployer->output = $output;
-
+        $this->deployer['log'] = $input->getOption('log');
         $output->setDecorated($input->getOption('decorated'));
         if (!$output->isDecorated() && !defined('NO_ANSI')) {
             define('NO_ANSI', 'true');
         }
-
         $this->deployer->config->set('master_url', 'http://localhost:' . $input->getOption('port'));
 
         $task = $this->deployer->tasks->get($input->getOption('task'));
-
-        $hostName = $input->getOption('host');
-        if ($hostName === 'local') {
-            $host = new Localhost('local');
-        } else {
-            $host = $this->deployer->hosts->get($input->getOption('host'));
-            $host->config()->load();
-        }
+        $host = $this->deployer->hosts->get($input->getOption('host'));
+        $host->config()->load();
 
         $worker = new Worker($this->deployer);
         $exitCode = $worker->execute($task, $host);
 
-        if ($hostName !== 'local') {
-            $host->config()->save();
-        }
+        $host->config()->save();
         return $exitCode;
     }
 }

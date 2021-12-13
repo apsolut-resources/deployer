@@ -1,19 +1,37 @@
 <?php
+/**
+ * ## Usage
+ *
+ * Add {{repository}} to your _deploy.php_ file:
+ *
+ * ```php
+ * set('repository', 'git@github.com:shopware/production.git');
+ * ```
+ *
+ * :::note
+ * Please remember that the installation must be modified so that it can be
+ * [build without database](https://developer.shopware.com/docs/guides/hosting/installation-updates/deployments/build-w-o-db#compiling-the-storefront-without-database).
+ * :::
+ */
 namespace Deployer;
+
+require_once __DIR__ . '/common.php';
 
 add('recipes', ['shopware']);
 
-set('repository', 'git@github.com:shopware/production.git');
 
-set('release_name', static function () {
-    return date('YmdHis');
-});
+set('default_timeout', 3600); // Increase when tasks take longer than that.
 
+// These files are shared among all releases.
 set('shared_files', [
     '.env',
+    'install.lock',
+    'public/.htaccess',
+    'public/.user.ini',
 ]);
+
+// These directories are shared among all releases.
 set('shared_dirs', [
-    'custom/plugins',
     'config/jwt',
     'files',
     'var/log',
@@ -21,131 +39,138 @@ set('shared_dirs', [
     'public/thumbnail',
     'public/sitemap',
 ]);
-set('writable_dirs', [
-    'custom/plugins',
-    'config/jwt',
-    'files',
-    'var',
-    'public/media',
-    'public/thumbnail',
-    'public/sitemap',
-]);
-set('static_folders', []);
 
-task('sw:update_code', static function () {
-    run('git clone {{repository}} {{release_path}}');
-});
-task('sw:system:install', static function () {
-    run('cd {{release_path}} && bin/console system:install');
-});
-task('sw:build', static function () {
-    run('cd {{release_path}}/bin && bash build.sh');
-});
-task('sw:system:setup', static function () {
-    run('cd {{release_path}} && bin/console system:setup');
-});
-task('sw:theme:compile', static function () {
-    run('cd {{release_path}} && bin/console theme:compile');
-});
+// These directories are made writable (the definition of "writable" requires attention).
+// Please note that the files in `config/jwt/*` receive special attention in the `sw:writable:jwt` task.
+set('writable_dirs', [
+    'config/jwt',
+    'custom/plugins',
+    'files',
+    'press_files',
+    'public/bundles',
+    'public/css',
+    'public/fonts',
+    'public/js',
+    'public/media',
+    'public/sitemap',
+    'public/theme',
+    'public/thumbnail',
+    'var',
+]);
+
+// This task remotely executes the `cache:clear` console command on the target server.
 task('sw:cache:clear', static function () {
     run('cd {{release_path}} && bin/console cache:clear');
 });
+
+// This task remotely executes the cache warmup console commands on the target server, so that the first user, who
+// visits the website, doesn't have to wait for the cache to be built up.
 task('sw:cache:warmup', static function () {
     run('cd {{release_path}} && bin/console cache:warmup');
     run('cd {{release_path}} && bin/console http:cache:warm:up');
 });
+
+// This task remotely executes the `database:migrate` console command on the target server.
 task('sw:database:migrate', static function () {
     run('cd {{release_path}} && bin/console database:migrate --all');
 });
-task('sw:plugin:refresh', function (){
+
+task('sw:plugin:refresh', function () {
     run('cd {{release_path}} && bin/console plugin:refresh');
 });
-task('sw:plugin:activate:all', static function () {
-    task('sw:plugin:refresh');
-    $plugins = explode("\n", run('cd {{release_path}} && bin/console plugin:list'));
 
-    // take line over headlines and count "-" to get the size of the cells
-    $lengths = array_filter(array_map('strlen', explode(' ', $plugins[4])));
+function getPlugins(): array
+{
+    $output = explode("\n", run('cd {{release_path}} && bin/console plugin:list'));
 
-    // ignore first seven lines (headline, title, table, ...)
-    $plugins = array_slice($plugins, 7, -3);
-    foreach ($plugins as $plugin) {
-        $pluginParts = [];
+    // Take line over headlines and count "-" to get the size of the cells.
+    $lengths = array_filter(array_map('strlen', explode(' ', $output[4])));
+    $splitRow = function ($row) use ($lengths) {
+        $columns = [];
         foreach ($lengths as $length) {
-            $pluginParts[] = trim(substr($plugin, 0, $length));
-            $plugin = substr($plugin, $length + 1);
+            $columns[] = trim(substr($row, 0, $length));
+            $row = substr($row, $length + 1);
         }
+        return $columns;
+    };
+    $headers = $splitRow($output[5]);
+    $splitRowIntoStructure = function ($row) use ($splitRow, $headers) {
+        $columns = $splitRow($row);
+        return array_combine($headers, $columns);
+    };
 
-        [
-            $plugin,
-            $label,
-            $version,
-            $upgrade,
-            $version,
-            $author,
-            $installed,
-            $active,
-            $upgradeable,
-        ] = $pluginParts;
+    // Ignore first seven lines (headline, title, table, ...).
+    $rows = array_slice($output, 7, -3);
 
-        if ($installed === 'No' || $active === 'No') {
-            run("cd {{release_path}} && bin/console plugin:install --activate $plugin");
+    $plugins = [];
+    foreach ($rows as $row) {
+        $pluginInformation = $splitRowIntoStructure($row);
+        $plugins[] = $pluginInformation;
+    }
+
+    return $plugins;
+}
+
+task('sw:plugin:update:all', static function () {
+    $plugins = getPlugins();
+    foreach ($plugins as $plugin) {
+        if ($plugin['Installed'] === 'Yes') {
+            writeln("<info>Running plugin update for " . $plugin['Plugin'] . "</info>\n");
+            run("cd {{release_path}} && bin/console plugin:update " . $plugin['Plugin']);
         }
     }
 });
-task('sw:plugin:migrate:all', static function(){
-    $plugins = explode("\n", run('cd {{release_path}} && bin/console plugin:list'));
 
-    // take line over headlines and count "-" to get the size of the cells
-    $lengths = array_filter(array_map('strlen', explode(' ', $plugins[4])));
-
-    // ignore first seven lines (headline, title, table, ...)
-    $plugins = array_slice($plugins, 7, -3);
-    foreach ($plugins as $plugin) {
-        $pluginParts = [];
-        foreach ($lengths as $length) {
-            $pluginParts[] = trim(substr($plugin, 0, $length));
-            $plugin = substr($plugin, $length + 1);
-        }
-
-        [
-            $plugin,
-            $label,
-            $version,
-            $upgrade,
-            $version,
-            $author,
-            $installed,
-            $active,
-            $upgradeable,
-        ] = $pluginParts;
-
-        if ($installed === 'Yes' || $active === 'Yes') {
-            run("cd {{release_path}} && bin/console database:migrate --all $plugin || true");
-        }
-    }
+task('sw:writable:jwt', static function () {
+    run('cd {{release_path}} && chmod -R 660 config/jwt/*');
 });
 
 /**
- * Grouped SW deploy tasks
+ * Grouped SW deploy tasks.
  */
 task('sw:deploy', [
-    'sw:build',
-    'sw:plugin:activate:all',
     'sw:database:migrate',
-    'sw:plugin:migrate:all',
-    'sw:theme:compile',
+    'sw:plugin:refresh',
+    'sw:cache:clear',
+    'sw:plugin:update:all',
     'sw:cache:clear',
 ]);
 
-/**
- * Main task
- */
-desc('Deploy your project');
+desc('Deploys your project');
 task('deploy', [
     'deploy:prepare',
     'sw:deploy',
     'deploy:clear_paths',
     'sw:cache:warmup',
+    'sw:writable:jwt',
     'deploy:publish',
 ]);
+
+
+task('sw-build-without-db:get-remote-config', static function () {
+    if (!test('[ -d {{current_path}} ]')) {
+        return;
+    }
+    within('{{deploy_path}}/current', function () {
+        run('./bin/console bundle:dump');
+        download('{{deploy_path}}/current/var/plugins.json', './var/');
+
+        run('./bin/console theme:dump');
+        download('{{deploy_path}}/current/files/theme-config', './files/');
+
+        // Temporary workaround to remove absolute file paths in Shopware <6.4.6.0
+        // See https://github.com/shopware/platform/commit/01c8ff86c7d8d3bee1888a26c24c9dc9b4529cbc and https://issues.shopware.com/issues/NEXT-17720
+        runLocally('sed -i "" -E \'s/\\\\\/var\\\\\/www\\\\\/htdocs\\\\\/releases\\\\\/[0-9]+\\\\\///g\' files/theme-config/* || true');
+    });
+});
+
+task('sw-build-without-db:build', static function () {
+    runLocally('CI=1 SHOPWARE_SKIP_BUNDLE_DUMP=1 ./bin/build.sh');
+});
+
+task('sw-build-without-db', [
+    'sw-build-without-db:get-remote-config',
+    'sw-build-without-db:build',
+]);
+
+before('deploy:update_code', 'sw-build-without-db');

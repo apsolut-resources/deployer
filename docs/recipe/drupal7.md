@@ -6,66 +6,91 @@
 
 [Source](/recipe/drupal7.php)
 
+* Requires
+  * [common](/docs/recipe/common.md)
 
-
-* Require
-  * [`recipe/common.php`](/docs/recipe/common.md)
-* Config
-  * [`drupal_site`](#drupal_site)
-  * [`shared_dirs`](#shared_dirs)
-  * [`shared_files`](#shared_files)
-  * [`writable_dirs`](#writable_dirs)
-* Tasks
-  * [`deploy`](#deploy)
-  * [`drupal:settings`](#drupalsettings)
-  * [`drupal:upload_files`](#drupalupload_files)
-
-## Config
+## Configuration
 ### drupal_site
-[Source](https://github.com/deployphp/deployer/search?q=%22drupal_site%22+in%3Afile+language%3Aphp+path%3Arecipe+filename%3Adrupal7.php)
+[Source](https://github.com/deployphp/deployer/blob/master/recipe/drupal7.php#L14)
 
 Set Drupal 7 site. Change if you use different site
 
-### shared_dirs
-[Source](https://github.com/deployphp/deployer/search?q=%22shared_dirs%22+in%3Afile+language%3Aphp+path%3Arecipe+filename%3Adrupal7.php)
+```php title="Default value"
+'default'
+```
 
-* Overrides [`shared_dirs`](/docs/recipe/common.md#shared_dirs) from `recipe/common.php`
+
+### shared_dirs
+[Source](https://github.com/deployphp/deployer/blob/master/recipe/drupal7.php#L17)
+
+Overrides [shared_dirs](/docs/recipe/deploy/shared.md#shared_dirs) from `recipe/deploy/shared.php`.
 
 Drupal 7 shared dirs
 
-### shared_files
-[Source](https://github.com/deployphp/deployer/search?q=%22shared_files%22+in%3Afile+language%3Aphp+path%3Arecipe+filename%3Adrupal7.php)
+```php title="Default value"
+[
+    'sites/{{drupal_site}}/files',
+]
+```
 
-* Overrides [`shared_files`](/docs/recipe/common.md#shared_files) from `recipe/common.php`
+
+### shared_files
+[Source](https://github.com/deployphp/deployer/blob/master/recipe/drupal7.php#L22)
+
+Overrides [shared_files](/docs/recipe/deploy/shared.md#shared_files) from `recipe/deploy/shared.php`.
 
 Drupal 7 shared files
 
-### writable_dirs
-[Source](https://github.com/deployphp/deployer/search?q=%22writable_dirs%22+in%3Afile+language%3Aphp+path%3Arecipe+filename%3Adrupal7.php)
+```php title="Default value"
+[
+    'sites/{{drupal_site}}/settings.php',
+]
+```
 
-* Overrides [`writable_dirs`](/docs/recipe/deploy/writable.md#writable_dirs) from `recipe/deploy/writable.php`
+
+### writable_dirs
+[Source](https://github.com/deployphp/deployer/blob/master/recipe/drupal7.php#L27)
+
+Overrides [writable_dirs](/docs/recipe/deploy/writable.md#writable_dirs) from `recipe/deploy/writable.php`.
 
 Drupal 7 writable dirs
 
+```php title="Default value"
+[
+    'sites/{{drupal_site}}/files',
+]
+```
+
+
 
 ## Tasks
+
 ### deploy
-[Source](https://github.com/deployphp/deployer/search?q=%22deploy%22+in%3Afile+language%3Aphp+path%3Arecipe+filename%3Adrupal7.php)
+[Source](https://github.com/deployphp/deployer/blob/master/recipe/drupal7.php#L8)
+
+
+
 
 
 
 This task is group task which contains next tasks:
-* [`deploy:prepare`](/docs/recipe/common.md#deployprepare)
-* [`deploy:publish`](/docs/recipe/common.md#deploypublish)
+* [deploy:prepare](/docs/recipe/common.md#deployprepare)
+* [deploy:publish](/docs/recipe/common.md#deploypublish)
 
 
 ### drupal:settings
-[Source](https://github.com/deployphp/deployer/search?q=%22drupal%3Asettings%22+in%3Afile+language%3Aphp+path%3Arecipe+filename%3Adrupal7.php)
+[Source](https://github.com/deployphp/deployer/blob/master/recipe/drupal7.php#L33)
+
+
 
 Create and upload Drupal 7 settings.php using values from secrets
 
+
 ### drupal:upload_files
-[Source](https://github.com/deployphp/deployer/search?q=%22drupal%3Aupload_files%22+in%3Afile+language%3Aphp+path%3Arecipe+filename%3Adrupal7.php)
+[Source](https://github.com/deployphp/deployer/blob/master/recipe/drupal7.php#L75)
+
+
 
 Upload Drupal 7 files folder
+
 

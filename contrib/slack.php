@@ -22,6 +22,7 @@ before('deploy', 'slack:notify');
   ```
   set('slack_webhook', 'https://hooks.slack.com/...');
   ```
+- `slack_channel` - channel to send notification to. The default is the channel configured in the webhook
 - `slack_title` – the title of application, default `{{application}}`
 - `slack_text` – notification message template, markdown supported
   ```
@@ -39,6 +40,10 @@ before('deploy', 'slack:notify');
 - `slack_color` – color's attachment
 - `slack_success_color` – success color's attachment
 - `slack_failure_color` – failure color's attachment
+- `slack_fields` - set attachments fields for pretty output in Slack, default:
+  ```
+  set('slack_fields', []);
+  ```
 
 ## Usage
 
@@ -65,16 +70,20 @@ namespace Deployer;
 
 use Deployer\Utility\Httpie;
 
+// Channel to publish to, when false the default channel the webhook will be used
+set('slack_channel', false);
+
 // Title of project
 set('slack_title', function () {
     return get('application', 'Project');
 });
 
 // Deploy message
-set('slack_text', '_{{user}}_ deploying `{{branch}}` to *{{target}}*');
+set('slack_text', '_{{user}}_ deploying `{{target}}` to *{{hostname}}*');
 set('slack_success_text', 'Deploy to *{{target}}* successful');
 set('slack_failure_text', 'Deploy to *{{target}}* failed');
 set('slack_rollback_text', '_{{user}}_ rolled back changes on *{{target}}*');
+set('slack_fields', []);
 
 // Color of attachment
 set('slack_color', '#4d91f7');
@@ -82,7 +91,16 @@ set('slack_success_color', '#00c100');
 set('slack_failure_color', '#ff0909');
 set('slack_rollback_color', '#eba211');
 
-desc('Notifying Slack');
+function checkSlackAnswer($result)
+{
+    if ('invalid_token' === $result) {
+        warning('Invalid Slack token');
+        return false;
+    }
+    return true;
+}
+
+desc('Notifies Slack');
 task('slack:notify', function () {
     if (!get('slack_webhook', false)) {
         return;
@@ -95,13 +113,13 @@ task('slack:notify', function () {
         'mrkdwn_in' => ['text'],
     ];
 
-    Httpie::post(get('slack_webhook'))->body(['attachments' => [$attachment]])->send();
+    $result = Httpie::post(get('slack_webhook'))->jsonBody(['channel' => get('slack_channel'), 'attachments' => [$attachment]])->send();
+    checkSlackAnswer($result);
 })
     ->once()
-    ->shallow()
     ->hidden();
 
-desc('Notifying Slack about deploy finish');
+desc('Notifies Slack about deploy finish');
 task('slack:notify:success', function () {
     if (!get('slack_webhook', false)) {
         return;
@@ -111,16 +129,17 @@ task('slack:notify:success', function () {
         'title' => get('slack_title'),
         'text' => get('slack_success_text'),
         'color' => get('slack_success_color'),
+        'fields' => get('slack_fields'),
         'mrkdwn_in' => ['text'],
     ];
 
-    Httpie::post(get('slack_webhook'))->body(['attachments' => [$attachment]])->send();
+    $result = Httpie::post(get('slack_webhook'))->jsonBody(['channel' => get('slack_channel'), 'attachments' => [$attachment]])->send();
+    checkSlackAnswer($result);
 })
     ->once()
-    ->shallow()
     ->hidden();
 
-desc('Notifying Slack about deploy failure');
+desc('Notifies Slack about deploy failure');
 task('slack:notify:failure', function () {
     if (!get('slack_webhook', false)) {
         return;
@@ -133,13 +152,13 @@ task('slack:notify:failure', function () {
         'mrkdwn_in' => ['text'],
     ];
 
-    Httpie::post(get('slack_webhook'))->body(['attachments' => [$attachment]])->send();
+    $result = Httpie::post(get('slack_webhook'))->jsonBody(['channel' => get('slack_channel'), 'attachments' => [$attachment]])->send();
+    checkSlackAnswer($result);
 })
     ->once()
-    ->shallow()
     ->hidden();
 
-desc('Notifying Slack about rollback');
+desc('Notifies Slack about rollback');
 task('slack:notify:rollback', function () {
     if (!get('slack_webhook', false)) {
         return;
@@ -152,8 +171,8 @@ task('slack:notify:rollback', function () {
         'mrkdwn_in' => ['text'],
     ];
 
-    Httpie::post(get('slack_webhook'))->body(['attachments' => [$attachment]])->send();
+    $result = Httpie::post(get('slack_webhook'))->jsonBody(['channel' => get('slack_channel'), 'attachments' => [$attachment]])->send();
+    checkSlackAnswer($result);
 })
     ->once()
-    ->shallow()
     ->hidden();

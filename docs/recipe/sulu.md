@@ -6,29 +6,41 @@
 
 [Source](/recipe/sulu.php)
 
+* Requires
+  * [symfony](/docs/recipe/symfony.md)
+
+## Configuration
+### bin/websiteconsole
+[Source](https://github.com/deployphp/deployer/blob/master/recipe/sulu.php#L12)
 
 
-* Require
-  * [`recipe/symfony.php`](/docs/recipe/symfony.md)
-* Tasks
-  * [`phpcr:migrate`](#phpcrmigrate) — Migrate PHPCR
-  * [`deploy:website:cache:clear`](#deploywebsitecacheclear) — Clear cache
-  * [`deploy:website:cache:warmup`](#deploywebsitecachewarmup) — Warm up cache
+
+
 
 
 ## Tasks
+
 ### phpcr:migrate
-[Source](https://github.com/deployphp/deployer/search?q=%22phpcr%3Amigrate%22+in%3Afile+language%3Aphp+path%3Arecipe+filename%3Asulu.php)
+[Source](https://github.com/deployphp/deployer/blob/master/recipe/sulu.php#L17)
+
+Migrates PHPCR.
+
 
 
 
 ### deploy:website:cache:clear
-[Source](https://github.com/deployphp/deployer/search?q=%22deploy%3Awebsite%3Acache%3Aclear%22+in%3Afile+language%3Aphp+path%3Arecipe+filename%3Asulu.php)
+[Source](https://github.com/deployphp/deployer/blob/master/recipe/sulu.php#L22)
+
+Clears cache.
+
 
 
 
 ### deploy:website:cache:warmup
-[Source](https://github.com/deployphp/deployer/search?q=%22deploy%3Awebsite%3Acache%3Awarmup%22+in%3Afile+language%3Aphp+path%3Arecipe+filename%3Asulu.php)
+[Source](https://github.com/deployphp/deployer/blob/master/recipe/sulu.php#L27)
+
+Warmups cache.
+
 
 
 

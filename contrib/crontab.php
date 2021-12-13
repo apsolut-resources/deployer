@@ -24,10 +24,10 @@ namespace Deployer;
 
 // Get path to bin
 set('bin/crontab', function () {
-    return locateBinaryPath('crontab');
+    return which('crontab');
 });
 
-desc('Load crontab');
+desc('Loads crontab');
 task('crontab:load', function () {
     set('crontab:all', []);
 

@@ -7,6 +7,7 @@
 [Source](/contrib/rollbar.php)
 
 
+
 ## Installing
 
 Add to your _deploy.php_
@@ -34,21 +35,25 @@ after('deploy', 'rollbar:notify');
 
 
 
-* Config
-  * [`rollbar_comment`](#rollbar_comment)
-* Tasks
-  * [`rollbar:notify`](#rollbarnotify) — Notifying Rollbar of deployment
-
-## Config
+## Configuration
 ### rollbar_comment
-[Source](https://github.com/deployphp/deployer/search?q=%22rollbar_comment%22+in%3Afile+language%3Aphp+path%3Acontrib+filename%3Arollbar.php)
+[Source](https://github.com/deployphp/deployer/blob/master/contrib/rollbar.php#L33)
 
+
+
+```php title="Default value"
+'_{{user}}_ deploying `{{branch}}` to *{{target}}*'
+```
 
 
 
 ## Tasks
+
 ### rollbar:notify
-[Source](https://github.com/deployphp/deployer/search?q=%22rollbar%3Anotify%22+in%3Afile+language%3Aphp+path%3Acontrib+filename%3Arollbar.php)
+[Source](https://github.com/deployphp/deployer/blob/master/contrib/rollbar.php#L36)
+
+Notifies Rollbar of deployment.
+
 
 
 

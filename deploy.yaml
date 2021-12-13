@@ -1,54 +1,28 @@
 import:
-  - src/Support/Config/version.php
-
-config:
-  depl: ~/dev/deployer
-  site: ~/deployer.org
-  dist: ~/dev/dist
+  - src/Support/update_manifest.php
 
 hosts:
-  deployer.org: ~
+  deployer.org:
+    remote_user: anton
+
+config:
+  banner: |
+    ╭──────────────────────────────────────────────────────╮
+    │                                                      │
+    │       Update available! Mode info ï.at/update        │
+    │                                                      │
+    ╰──────────────────────────────────────────────────────╯
 
 tasks:
-  pull:
-    script:
-      - cd {{depl}}
-      - git pull --rebase
-      - git status
-
-  test:
-    script:
-      - cd {{depl}}
-      - composer install
-      - composer test
-      - bin/build
-      - php deployer.phar --version
-
-  release:composer:
-    script:
-      - cd {{depl}}
-      - bin/release {{version}}
-      - git push
-      - git push --tags
-
-  release:phar:
-    script:
-      - cd {{site}}
-      - php scripts/sync-artifacts.php
-      - git add artifacts
-      - git commit -m "Release {{version}}"
-
-  release:dist:
-    script:
-      - cd {{dist}}
-      - php update
-
   release:
-    - release:composer
-    - release:phar
-    - release:dist
+    - update_manifest
+    - release_dist
 
-before:
-  release:
-    - pull
-    - test
+  release_dist:
+    - desc: Release deployer/dist
+    - cd: ~/dev/dist
+      run: php update
+
+  create_banner:
+    - desc: Create an update banner
+    - run: echo $'{{banner}}' > {{site}}/check-updates/{{old_version}}

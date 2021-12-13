@@ -8,7 +8,6 @@
 - Added documentation generation from recipes.
 - Added support for `ask()` functions in parallel mode.
 - Added support for `sudo` commands.
-- Added `provision.php` recipe for a quick setup of a server with php, nginx and security.
 - Added `dep status` command which shows currently deployed revisions.
 - Added `dep hosts` command to show hosts info in json format.
 - Added `dep tree` command to show task configuration.
@@ -20,6 +19,17 @@
 - Added support for placeholders in `run()` func.
 - Added support for secret passing in `run()` func without outputting to logs.
 - Added docker-based E2E testing environment. [#2197]
+- Added support for PHP8.
+- Added slack_channel option to Slack recipe.
+- Chatwork contrib recipe.
+- Added `release_or_current_path` option that fallbacks to the `current_path` when the `release_path` does not exist. [#2486]
+- Added `contrib/php-fpm.php` recipe that provides a task to reload PHP-fpm. [#2487]
+- Added tasks `artisan:key:generate` and `artisan:passport:keys` to the Laravel recipe.
+- Added the following artisan tasks: `artisan:route:clear`, `artisan:route:list`, `artisan:horizon`, `artisan:horizon:clear`, `artisan:horizon:continue`, `artisan:horizon:list`, `artisan:horizon:pause`, `artisan:horizon:purge`, `artisan:horizon:status`, `artisan:event:list`, `artisan:queue:failed`, `artisan:queue:flushed`. [#2488]
+- Isolated console application runner for E2E tests.
+- Support for code coverage in E2E tests.
+- Webpack-encore contrib recipe.
+- Recipe for Statamic.
 
 ### Changed
 - Refactored executor engine, up to 2x faster than before.
@@ -28,10 +38,33 @@
 - Docs rewritten to be more clean, easy to use and understandable.
 - Better parallel execution support, configurable per task.
 - Refactored `dep init` command.
+- Normalize shopware recipe (require common.php).
+- Removed the `min` and `max` constraints on the `artisan:optimize` and `artisan:optimize:clear` tasks. [#2488]
+- Excluded the `shared_files`, `shared_dirs` and `writable_dirs` configs from the `deploy.yaml` default template unless the `common` template was chosen.
+- The way `deploy:update_code` fetched the GIT remote URL from the config.
+- Use cp instead of rsync when copying directories. [#2656]
 
 ### Fixed
 - Lots, and lots of long-standing bugs.
-- Impossibility to ask for empty password via askHiddenResponse(). [#2317]
+- Shopware recipe plugin active/update.
+- Fixed incorrect plugin:list parsing (remove duplicate version column). Invoke nested sw:plugin:refresh task instead of redefining it, so that it actually runs.
+- Shopware activates/runs migration in order (respects dependencies in composer.json). [#2423] [#2425]
+- Boolean options should not go through the `self::escape` function. [#2392]
+- Check if shared file exists before touching it (and fail because no write permission). [#2393]
+- Fixed "dep run" suggestion in ACL error message. [#2501]
+- TypeError, port is int on escapeshellarg. [#2503]
+- .env.local.php in Symfony recipe. [#2506]
+- Fixed regex identifying "cd" commands in YAML scripts. The regex was not taking into account that multiple commands can be executed within the same line — e.g. "cd {{release_path}} && npm run prod". [#2509]
+- Slack default channel null breaks webhook. [#2525]
+- Use port for ssh-keyscan when applicable. [#2549]
+- Support passing `null` as default in get(). [#2545]
+- Shopware recipe: First activate plugins THEN build them to avoid breaking theme:compile with unbuild themes (which were activated AFTER build).
+- Shopware recipe sw:plugin:upgrade:all task.
+- Only perform keyscan for repos that are pulled over ssh. Better detection of hostname. [#2667]
+
+### Removed
+- Removed the `artisan:public_disk` task. Use the `artisan:storage:link` task instead. [#2488]
+- Removed the following tasks `artisan:horizon:assets`, `artisan:horizon:publish`, `artisan:telescope:publish` and `artisan:nova:publish`. These commands publish code that should be commited. [#2488]
 
 
 ## v6.8.0
@@ -596,7 +629,22 @@
 - Fixed `DotArray` syntax in `Collection`.
 
 
-[#2317]: https://github.com/deployphp/deployer/issues/2317
+[#2667]: https://github.com/deployphp/deployer/pull/2667
+[#2656]: https://github.com/deployphp/deployer/issues/2656
+[#2549]: https://github.com/deployphp/deployer/issues/2549
+[#2545]: https://github.com/deployphp/deployer/issues/2545
+[#2525]: https://github.com/deployphp/deployer/issues/2525
+[#2509]: https://github.com/deployphp/deployer/issues/2509
+[#2506]: https://github.com/deployphp/deployer/issues/2506
+[#2503]: https://github.com/deployphp/deployer/issues/2503
+[#2501]: https://github.com/deployphp/deployer/pull/2501
+[#2488]: https://github.com/deployphp/deployer/pull/2488
+[#2487]: https://github.com/deployphp/deployer/pull/2487
+[#2486]: https://github.com/deployphp/deployer/pull/2486
+[#2425]: https://github.com/deployphp/deployer/pull/2425
+[#2423]: https://github.com/deployphp/deployer/issues/2423
+[#2393]: https://github.com/deployphp/deployer/pull/2393
+[#2392]: https://github.com/deployphp/deployer/issues/2392
 [#2197]: https://github.com/deployphp/deployer/issues/2197
 [#1994]: https://github.com/deployphp/deployer/issues/1994
 [#1990]: https://github.com/deployphp/deployer/issues/1990

@@ -4,9 +4,9 @@
 
 Add to your _deploy.php_
 
-~~~php
+```php
 require 'contrib/npm.php';
-~~~
+```
 
 ## Configuration
 
@@ -14,19 +14,19 @@ require 'contrib/npm.php';
 
 ## Usage
 
-~~~php
+```php
 after('deploy:update_code', 'npm:install');
-~~~
+```
 
  */
 namespace Deployer;
 
 set('bin/npm', function () {
-    return locateBinaryPath('npm');
+    return which('npm');
 });
 
 // In there is a {{previous_release}}, node_modules will be copied from it before installing deps.
-desc('Install npm packages');
+desc('Installs npm packages');
 task('npm:install', function () {
     if (has('previous_release')) {
         if (test('[ -d {{previous_release}}/node_modules ]')) {

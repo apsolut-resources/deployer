@@ -86,7 +86,7 @@ function env_stringify(array $array): string
 {
     return implode(' ', array_map(
         function ($key, $value) {
-            return sprintf("%s='%s'", $key, $value);
+            return sprintf("%s=%s", $key, escapeshellarg($value));
         },
         array_keys($array),
         $array
@@ -143,25 +143,6 @@ function parse_home_dir(string $path): string
     return $path;
 }
 
-function fork(callable $callable)
-{
-    $pid = null;
-    // Make sure function is not disabled via php.ini "disable_functions"
-    if (extension_loaded('pcntl') && function_exists('pcntl_fork')) {
-        declare(ticks=1);
-        $pid = pcntl_fork();
-    }
-    if (is_null($pid) || $pid === -1) {
-        // Fork fails or there is no `pcntl` extension.
-        $callable();
-    } elseif ($pid === 0) {
-        // Child process.
-        posix_setsid();
-        $callable();
-        exit(0);
-    }
-}
-
 function find_line_number(string $source, string $string): int
 {
     $string = explode(PHP_EOL, $string)[0];
@@ -182,4 +163,91 @@ function find_config_line(string $source, string $name): \Generator
             yield [$n + 1, $line];
         }
     }
+}
+
+function colorize_host(string $alias): string
+{
+    if (defined('NO_ANSI')) {
+        return $alias;
+    }
+
+    if (in_array($alias, ['localhost', 'local'], true)) {
+        return $alias;
+    }
+
+    if (getenv('COLORTERM') === 'truecolor') {
+        $hsv = function ($h, $s, $v) {
+            $r = $g = $b = $i = $f = $p = $q = $t = 0;
+            $i = floor($h * 6);
+            $f = $h * 6 - $i;
+            $p = $v * (1 - $s);
+            $q = $v * (1 - $f * $s);
+            $t = $v * (1 - (1 - $f) * $s);
+            switch ($i % 6) {
+                case 0:
+                    $r = $v;
+                    $g = $t;
+                    $b = $p;
+                    break;
+                case 1:
+                    $r = $q;
+                    $g = $v;
+                    $b = $p;
+                    break;
+                case 2:
+                    $r = $p;
+                    $g = $v;
+                    $b = $t;
+                    break;
+                case 3:
+                    $r = $p;
+                    $g = $q;
+                    $b = $v;
+                    break;
+                case 4:
+                    $r = $t;
+                    $g = $p;
+                    $b = $v;
+                    break;
+                case 5:
+                    $r = $v;
+                    $g = $p;
+                    $b = $q;
+                    break;
+            }
+            $r = round($r * 255);
+            $g = round($g * 255);
+            $b = round($b * 255);
+            return "\x1b[38;2;{$r};{$g};{$b}m";
+        };
+        $total = 100;
+        $colors = [];
+        for ($i = 0; $i < $total; $i++) {
+            $colors[] = $hsv($i / $total, .5, .9);
+        }
+        if ($alias === 'prod' || $alias === 'production') {
+            return "$colors[99]$alias\x1b[0m";
+        }
+        if ($alias === 'beta') {
+            return "$colors[14]$alias\x1b[0m";
+        }
+        $tag = $colors[abs(crc32($alias)) % count($colors)];
+        return "$tag$alias\x1b[0m";
+    }
+
+    $colors = [
+        'fg=cyan;options=bold',
+        'fg=green;options=bold',
+        'fg=yellow;options=bold',
+        'fg=cyan',
+        'fg=blue',
+        'fg=yellow',
+        'fg=magenta',
+        'fg=blue;options=bold',
+        'fg=green',
+        'fg=magenta;options=bold',
+        'fg=red;options=bold',
+    ];
+    $tag = $colors[abs(crc32($alias)) % count($colors)];
+    return "<$tag>$alias</>";
 }

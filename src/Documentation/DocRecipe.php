@@ -5,9 +5,7 @@
  * file that was distributed with this source code.
  */
 
-
 namespace Deployer\Documentation;
-
 
 class DocRecipe
 {
@@ -39,14 +37,16 @@ class DocRecipe
     public function parse(string $content)
     {
         $comment = '';
-        $first = true;
         $desc = '';
         $currentTask = null;
 
         $content = str_replace("\r\n", "\n", $content);
 
         $state = 'root';
-        foreach (explode("\n", $content) as $i => $line) {
+        $lines = explode("\n", $content);
+
+        for ($i = 0; $i < count($lines); $i++) {
+            $line = $lines[$i];
             $m = [];
             $match = function ($regexp) use ($line, &$m) {
                 return preg_match("#$regexp#", $line, $m);
@@ -55,24 +55,37 @@ class DocRecipe
                 case 'root':
                     if ($match('^/\*\*?')) {
                         $state = 'comment';
-                        $comment .= trimComment($line) . "\n";
+                        $comment .= trim_comment($line) . "\n";
                         break;
                     }
                     if ($match('^//')) {
-                        $comment .= trimComment($line) . "\n";
+                        $comment .= trim_comment($line) . "\n";
                         break;
                     }
                     if ($match('^require.+?[\'"](?<recipe>.+?)[\'"]')) {
                         $this->require[] = dirname($this->recipePath) . $m['recipe'];
                         break;
                     }
-                    if ($match('^set\([\'"](?<config_name>[\w_:]+?)[\'"]')) {
+                    if ($match('^set\([\'"](?<config_name>[\w_:\-/]+?)[\'"]')) {
                         $set = new DocConfig();
                         $set->name = $m['config_name'];
                         $set->comment = trim($comment);
                         $comment = '';
                         $set->recipePath = $this->recipePath;
                         $set->lineNumber = $i + 1;
+                        if (preg_match('#^set\(.+?,\s(?<value>.+?)\);$#', $line, $m)) {
+                            $set->defaultValue = $m['value'];
+                        }
+                        if (preg_match('#^set\(.+?,\s\[$#', $line, $m)) {
+                            $multiLineArray = "[\n";
+                            $line = $lines[++$i];
+                            while (!preg_match('/^]/', $line)) {
+                                $multiLineArray .= $line . "\n";
+                                $line = $lines[++$i];
+                            }
+                            $multiLineArray .= "]";
+                            $set->defaultValue = $multiLineArray;
+                        }
                         $this->config[$set->name] = $set;
                         break;
                     }
@@ -80,7 +93,7 @@ class DocRecipe
                         $desc = $m['desc'];
                         break;
                     }
-                    if ($match('^task\([\'"](?<task_name>[\w_:]+?)[\'"],\s\[$')) {
+                    if ($match('^task\([\'"](?<task_name>[\w_:-]+?)[\'"],\s\[$')) {
                         $task = new DocTask();
                         $task->name = $m['task_name'];
                         $task->desc = $desc;
@@ -94,7 +107,7 @@ class DocRecipe
                         $currentTask = $task;
                         break;
                     }
-                    if ($match('^task\([\'"](?<task_name>[\w_:]+?)[\'"]')) {
+                    if ($match('^task\([\'"](?<task_name>[\w_:-]+?)[\'"]')) {
                         $task = new DocTask();
                         $task->name = $m['task_name'];
                         $task->desc = $desc;
@@ -108,12 +121,12 @@ class DocRecipe
                     if ($match('^<\?php')) {
                         break;
                     }
+                    if ($match('^namespace Deployer;$')) {
+                        $this->comment = $comment;
+                        break;
+                    }
 
                     $desc = '';
-                    if($first && $comment !== '') {
-                        $this->comment = $comment;
-                    }
-                    $first = false;
                     $comment = '';
                     break;
 
@@ -122,11 +135,11 @@ class DocRecipe
                         $state = 'root';
                         break;
                     }
-                    $comment .= trimComment($line) . "\n";
+                    $comment .= trim_comment($line) . "\n";
                     break;
 
                 case 'group_task':
-                    if ($match('^\s+\'(?<task_name>[\w_:]+?)\',$')) {
+                    if ($match('^\s+\'(?<task_name>[\w_:-]+?)\',$')) {
                         $currentTask->group[] = $m['task_name'];
                         break;
                     }

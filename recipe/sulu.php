@@ -1,5 +1,4 @@
 <?php
-
 namespace Deployer;
 
 require_once __DIR__ . '/symfony.php';
@@ -11,20 +10,20 @@ add('shared_dirs', ['var/indexes', 'var/sitemaps', 'var/uploads', 'public/upload
 add('writable_dirs', ['public/uploads']);
 
 set('bin/websiteconsole', function () {
-    return parse('{{bin/php}} {{release_path}}/bin/websiteconsole --no-interaction');
+    return parse('{{bin/php}} {{release_or_current_path}}/bin/websiteconsole --no-interaction');
 });
 
-desc('Migrate PHPCR');
+desc('Migrates PHPCR');
 task('phpcr:migrate', function () {
     run('{{bin/console}} phpcr:migrations:migrate');
 });
 
-desc('Clear cache');
+desc('Clears cache');
 task('deploy:website:cache:clear', function () {
     run('{{bin/websiteconsole}} cache:clear --no-warmup');
 });
 
-desc('Warm up cache');
+desc('Warmups cache');
 task('deploy:website:cache:warmup', function () {
     run('{{bin/websiteconsole}} cache:warmup');
 });

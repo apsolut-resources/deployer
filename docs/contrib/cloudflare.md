@@ -7,6 +7,7 @@
 [Source](/contrib/cloudflare.php)
 
 
+
 ### Installing
 
 Add to your _deploy.php_
@@ -22,6 +23,7 @@ require 'contrib/cloudflare.php';
     - `api_key` – Cloudflare API key generated on the "My Account" page.
     - `email` – Cloudflare Email address associated with your account.
     - `domain` – The domain you want to clear
+    - `zone_id` – Cloudflare Zone ID (optional).
 
 ### Usage
 
@@ -30,13 +32,14 @@ if not the, last tasks before cleanup
 
 
 
-* Tasks
-  * [`deploy:cloudflare`](#deploycloudflare) — Clearing Cloudflare Cache
-
 
 ## Tasks
+
 ### deploy:cloudflare
-[Source](https://github.com/deployphp/deployer/search?q=%22deploy%3Acloudflare%22+in%3Afile+language%3Aphp+path%3Acontrib+filename%3Acloudflare.php)
+[Source](https://github.com/deployphp/deployer/blob/master/contrib/cloudflare.php#L29)
+
+Clears Cloudflare Cache.
+
 
 
 

@@ -44,8 +44,8 @@ class Selector
         }
 
         $labels = $host->get('labels', []);
-        $labels['__host__'] = $host->getAlias();
-        $labels['__all__'] = 'yes';
+        $labels['alias'] = $host->getAlias();
+        $labels['true'] = 'true';
         $isTrue = function ($value) {
             return $value;
         };
@@ -62,13 +62,26 @@ class Selector
         return false;
     }
 
-    private static function compare(string $op, ?string $a, ?string $b): bool
+    /**
+     * @param string|string[] $a
+     */
+    private static function compare(string $op, $a, ?string $b): bool
     {
+        $matchFunction = function($a, ?string $b) {
+            foreach ((array)$a as $item) {
+                if ($item === $b) {
+                    return true;
+                }
+            }
+
+            return false;
+        };
+
         if ($op === '=') {
-            return $a === $b;
+            return $matchFunction($a, $b);
         }
         if ($op === '!=') {
-            return $a !== $b;
+            return !$matchFunction($a, $b);
         }
         return false;
     }
@@ -81,13 +94,13 @@ class Selector
             foreach (explode('&', $sub) as $part) {
                 $part = trim($part);
                 if ($part === 'all') {
-                    $conditions[] = ['=', '__all__', 'yes'];
+                    $conditions[] = ['=', 'true', 'true'];
                     continue;
                 }
                 if (preg_match('/(?<var>.+?)(?<op>!?=)(?<value>.+)/', $part, $match)) {
                     $conditions[] = [$match['op'], trim($match['var']), trim($match['value'])];
                 } else {
-                    $conditions[] = ['=', '__host__', trim($part)];
+                    $conditions[] = ['=', 'alias', trim($part)];
                 }
             }
             $all[] = $conditions;

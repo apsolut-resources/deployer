@@ -1,104 +1,231 @@
 <?php
-
 namespace Deployer;
 
-use Deployer\Exception\GracefulShutdownException;
-use Symfony\Component\Console\Input\InputOption;
-use function Deployer\Support\starts_with;
+require __DIR__ . '/provision/databases.php';
+require __DIR__ . '/provision/nodejs.php';
+require __DIR__ . '/provision/php.php';
+require __DIR__ . '/provision/website.php';
+
+use function Deployer\Support\parse_home_dir;
 
 add('recipes', ['provision']);
 
-set('php_version', '7.4');
-set('sudo_password', function () {
-    return askHiddenResponse('Type new password:');
+// Name of lsb_release like: focal, bionic, etc.
+// As only Ubuntu 20.04 LTS is supported for provision should be the `focal`.
+set('lsb_release', function () {
+    return run("lsb_release -s -c");
 });
 
-desc('Provision server with nginx, php, php-fpm');
+desc('Provision the server');
 task('provision', [
     'provision:check',
+    'provision:configure',
+    'provision:update',
     'provision:upgrade',
     'provision:install',
     'provision:ssh',
-    'provision:ssh',
-    'provision:user:deployer',
     'provision:firewall',
-    'provision:install:php',
-    'provision:install:composer',
-    'provision:config:php-cli',
-    'provision:config:php-fpm',
-    'provision:config:php-fpm:pool',
-    'provision:config:php:sessions',
-    'provision:nginx:dhparam',
-    'provision:nginx',
+    'provision:deployer',
+    'provision:server',
+    'provision:php',
+    'provision:databases',
+    'provision:composer',
+    'provision:npm',
+    'provision:website',
+    'provision:verify',
 ]);
 
-desc('Check pre-required state');
+desc('Checks pre-required state');
 task('provision:check', function () {
-    $ok = true;
-    if (get('php_version') !== '7.4') {
-        $ok = false;
-        warning("Only php 7.4 currently supported.");
+    if (get('remote_user') !== 'root') {
+        warning('');
+        warning('Run provision as root: -o remote_user=root');
+        warning('');
     }
 
     $release = run('cat /etc/os-release');
     ['NAME' => $name, 'VERSION_ID' => $version] = parse_ini_string($release);
-
     if ($name !== 'Ubuntu' || $version !== '20.04') {
-        $ok = false;
-        warning('Only Ubuntu 20.04 LTS supported for now.');
+        warning('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!');
+        warning('!!                                    !!');
+        warning('!!  Only Ubuntu 20.04 LTS supported!  !!');
+        warning('!!                                    !!');
+        warning('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!');
     }
+})->oncePerNode();
 
-    if (!$ok) {
-        throw new GracefulShutdownException('Missing some pre-required state. Please check warnings.');
+desc('Collects required params');
+task('provision:configure', function () {
+    $params = [
+        'sudo_password',
+        'domain',
+        'public_path',
+        'php_version',
+        'db_type',
+        'db_user',
+        'db_name',
+        'db_password',
+    ];
+    $code = "\n\n    host(<info>'{{alias}}'</info>)";
+    foreach ($params as $name) {
+        $code .= "\n        ->set(<info>'$name'</info>, <info>'…'</info>)";
+    }
+    $code .= ";\n\n";
+    writeln($code);
+    foreach ($params as $name) {
+        get($name);
     }
 });
 
-desc('Upgrade all packages');
-task('provision:upgrade', function () {
+desc('Adds repositories and update');
+task('provision:update', function () {
+    // PHP
+    run('apt-add-repository ppa:ondrej/php -y', ['env' => ['DEBIAN_FRONTEND' => 'noninteractive']]);
+
+    // Caddy
+    run("curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/gpg.key' > /etc/apt/trusted.gpg.d/caddy-stable.asc");
+    run("curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/debian.deb.txt' > /etc/apt/sources.list.d/caddy-stable.list");
+
+    // Nodejs
+    $keyring = '/usr/share/keyrings/nodesource.gpg';
+    run("curl -fsSL https://deb.nodesource.com/gpgkey/nodesource.gpg.key | gpg --dearmor | sudo tee '$keyring' >/dev/null");
+    run("gpg --no-default-keyring --keyring '$keyring' --list-keys");
+    run("echo 'deb [signed-by=$keyring] https://deb.nodesource.com/{{nodejs_version}} {{lsb_release}} main' | sudo tee /etc/apt/sources.list.d/nodesource.list");
+    run("echo 'deb-src [signed-by=$keyring] https://deb.nodesource.com/{{nodejs_version}} {{lsb_release}} main' | sudo tee -a /etc/apt/sources.list.d/nodesource.list");
+
+    // Update
     run('apt-get update', ['env' => ['DEBIAN_FRONTEND' => 'noninteractive']]);
-    run('apt-get upgrade -y', ['env' => ['DEBIAN_FRONTEND' => 'noninteractive']]);
-});
+})
+    ->oncePerNode()
+    ->verbose();
 
-desc('Install base packages');
+desc('Upgrades all packages');
+task('provision:upgrade', function () {
+    run('apt-get upgrade -y', ['env' => ['DEBIAN_FRONTEND' => 'noninteractive'], 'timeout' => 900]);
+})
+    ->oncePerNode()
+    ->verbose();
+
+desc('Installs packages');
 task('provision:install', function () {
     $packages = [
+        'acl',
+        'apt-transport-https',
         'build-essential',
+        'caddy',
         'curl',
+        'debian-archive-keyring',
+        'debian-keyring',
         'fail2ban',
         'gcc',
         'git',
         'libmcrypt4',
         'libpcre3-dev',
+        'libsqlite3-dev',
         'make',
         'ncdu',
-        'nginx',
+        'nodejs',
         'pkg-config',
+        'python',
+        'redis',
         'sendmail',
+        'sqlite3',
         'ufw',
         'unzip',
         'uuid-runtime',
         'whois',
     ];
-    run('apt-get install -y --allow-downgrades --allow-remove-essential --allow-change-held-packages ' . implode(' ', $packages), ['env' => ['DEBIAN_FRONTEND' => 'noninteractive']]);
-});
+    run('apt-get install -y ' . implode(' ', $packages), ['env' => ['DEBIAN_FRONTEND' => 'noninteractive'], 'timeout' => 900]);
+})
+    ->verbose()
+    ->oncePerNode();
 
-desc('Configure SSH');
+desc('Configures a server');
+task('provision:server', function () {
+    run('usermod -a -G www-data caddy');
+    $html = <<<'HTML'
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>404 Not Found</title>
+    <style>
+        body {
+            -moz-osx-font-smoothing: grayscale;
+            -webkit-font-smoothing: antialiased;
+            align-content: center;
+            background: #343434;
+            color: #fff;
+            display: grid;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+            font-size: 20px;
+            justify-content: center;
+            margin: 0;
+            min-height: 100vh;
+        }
+        main {
+            padding: 0 30px;
+        }
+        svg {
+            animation: 2s ease-in-out infinite hover;
+        }
+        @keyframes hover {
+            0%, 100% {
+                transform: translateY(0)
+            }
+            50% {
+                transform: translateY(-8px)
+            }
+        }
+    </style>
+</head>
+<body>
+<main>
+    <svg width="48" height="38" viewBox="0 0 243 193">
+        <title>Deployer</title>
+        <g fill="none" fill-rule="evenodd">
+            <path fill="#0CF" d="M242.781.39L.207 101.653l83.606 21.79z"/>
+            <path fill="#00B3E0" d="M97.555 186.363l14.129-50.543L242.78.39 83.812 123.442l13.743 62.922"/>
+            <path fill="#0084A6" d="M97.555 186.363l33.773-39.113-19.644-11.43-14.13 50.543"/>
+            <path fill="#0CF" d="M131.328 147.25l78.484 45.664L242.782.391 111.683 135.82l19.644 11.429"/>
+        </g>
+    </svg>
+    <h1>Not Found</h1>
+    <p>The requested URL was not found on this server.</p>
+</main>
+</body>
+</html>
+HTML;
+    run("mkdir -p /var/dep/html");
+    run("echo $'$html' > /var/dep/html/404.html");
+})->oncePerNode();
+
+desc('Configures the ssh');
 task('provision:ssh', function () {
-    run('sed -i "/PasswordAuthentication yes/d" /etc/ssh/sshd_config');
-    run('echo "" | sudo tee -a /etc/ssh/sshd_config');
-    run('echo "" | sudo tee -a /etc/ssh/sshd_config');
-    run('echo "PasswordAuthentication no" | sudo tee -a /etc/ssh/sshd_config');
+    run("sed -i 's/PasswordAuthentication .*/PasswordAuthentication no/' /etc/ssh/sshd_config");
     run('ssh-keygen -A');
     run('service ssh restart');
     if (test('[ ! -d /root/.ssh ]')) {
         run('mkdir -p /root/.ssh');
         run('touch /root/.ssh/authorized_keys');
     }
+})->oncePerNode();
+
+set('sudo_password', function () {
+    return askHiddenResponse(' Password for sudo: ');
 });
 
-desc('Setup deployer user');
-task('provision:user:deployer', function () {
+// Specify which key to copy to server.
+// Set to `false` to disable copy of key.
+set('ssh_copy_id', '~/.ssh/id_rsa.pub');
+
+desc('Setups a deployer user');
+task('provision:deployer', function () {
     if (test('id deployer >/dev/null 2>&1')) {
+        // TODO: Check what created deployer user configured correctly.
+        // TODO: Update sudo_password of deployer user.
+        // TODO: Copy ssh_copy_id to deployer ssh dir.
         info('deployer user already exist');
     } else {
         run('useradd deployer');
@@ -110,143 +237,48 @@ task('provision:user:deployer', function () {
         run('cp /root/.profile /home/deployer/.profile');
         run('cp /root/.bashrc /home/deployer/.bashrc');
 
+        // Make color prompt.
+        run("sed -i 's/#force_color_prompt=yes/force_color_prompt=yes/' /home/deployer/.bashrc");
+
         $password = run("mkpasswd -m sha-512 '%secret%'", ['secret' => get('sudo_password')]);
         run("usermod --password '%secret%' deployer", ['secret' => $password]);
 
-        // TODO: Copy current ssh-key.
-        run('echo >> /root/.ssh/authorized_keys');
+        if (!empty(get('ssh_copy_id'))) {
+            $file = parse_home_dir(get('ssh_copy_id'));
+            if (!file_exists($file)) {
+                info('Configure path to your public key.');
+                writeln("");
+                writeln("    set(<info>'ssh_copy_id'</info>, <info>'~/.ssh/id_rsa.pub'</info>);");
+                writeln("");
+                $file = ask(' Specify path to your public ssh key: ', '~/.ssh/id_rsa.pub');
+            }
+            run('echo "$KEY" >> /root/.ssh/authorized_keys', ['env' => ['KEY' => file_get_contents(parse_home_dir($file))]]);
+        }
         run('cp /root/.ssh/authorized_keys /home/deployer/.ssh/authorized_keys');
-
         run('ssh-keygen -f /home/deployer/.ssh/id_rsa -t rsa -N ""');
 
         run('chown -R deployer:deployer /home/deployer');
         run('chmod -R 755 /home/deployer');
         run('chmod 700 /home/deployer/.ssh/id_rsa');
 
-        run('echo "deployer ALL=NOPASSWD: /usr/sbin/service php-fpm reload" > /etc/sudoers.d/php-fpm');
-
         run('usermod -a -G www-data deployer');
-        run('id deployer');
+        run('usermod -a -G caddy deployer');
         run('groups deployer');
     }
-});
+})->oncePerNode();
 
-desc('Setup firewall');
+desc('Setups a firewall');
 task('provision:firewall', function () {
-    $firewallEnabled = get('firewall', true);
+    run('ufw allow 22');
+    run('ufw allow 80');
+    run('ufw allow 443');
+    run('ufw --force enable');
+})->oncePerNode();
 
-    if ($firewallEnabled) {
-        run('ufw allow 22');
-        run('ufw allow 80');
-        run('ufw allow 443');
-        run('ufw --force enable');
-    } else {
-        if (output()->isDebug()) {
-            writeln("Skipping firewall setup");
-        }
+desc('Verifies what provision was successful');
+task('provision:verify', function () {
+    fetch('{{domain}}', 'get', [], null, $info, true);
+    if ($info['http_code'] === 404) {
+        info("provisioned successfully!");
     }
-});
-
-desc('Install PHP packages');
-task('provision:install:php', function () {
-    $packages = [
-        "php-bcmath",
-        "php-cli",
-        "php-curl",
-        "php-dev",
-        "php-fpm",
-        "php-fpm",
-        "php-gd",
-        "php-imap",
-        "php-intl",
-        "php-mbstring",
-        "php-mysql",
-        "php-pgsql",
-        "php-readline",
-        "php-soap",
-        "php-sqlite3",
-        "php-xml",
-        "php-zip",
-    ];
-    run('apt-get install -y --force-yes ' . implode(' ', $packages), ['env' => ['DEBIAN_FRONTEND' => 'noninteractive']]);
-});
-
-
-desc('Install Composer');
-task('provision:install:composer', function () {
-    run('curl -sS https://getcomposer.org/installer | php');
-    run('mv composer.phar /usr/local/bin/composer');
-});
-
-desc('Configure PHP-CLI');
-task('provision:config:php-cli', function () {
-    run('sudo sed -i "s/error_reporting = .*/error_reporting = E_ALL/" /etc/php/{{php_version}}/cli/php.ini');
-    run('sudo sed -i "s/display_errors = .*/display_errors = On/" /etc/php/{{php_version}}/cli/php.ini');
-    run('sudo sed -i "s/memory_limit = .*/memory_limit = 512M/" /etc/php/{{php_version}}/cli/php.ini');
-    run('sudo sed -i "s/;date.timezone.*/date.timezone = UTC/" /etc/php/{{php_version}}/cli/php.ini');
-});
-
-desc('Configure PHP-FPM');
-task('provision:config:php-fpm', function () {
-    run('sed -i "s/error_reporting = .*/error_reporting = E_ALL/" /etc/php/{{php_version}}/fpm/php.ini');
-    run('sed -i "s/display_errors = .*/display_errors = On/" /etc/php/{{php_version}}/fpm/php.ini');
-    run('sed -i "s/;cgi.fix_pathinfo=1/cgi.fix_pathinfo=0/" /etc/php/{{php_version}}/fpm/php.ini');
-    run('sed -i "s/memory_limit = .*/memory_limit = 512M/" /etc/php/{{php_version}}/fpm/php.ini');
-    run('sed -i "s/;date.timezone.*/date.timezone = UTC/" /etc/php/{{php_version}}/fpm/php.ini');
-});
-
-desc('Configure FPM Pool');
-task('provision:config:php-fpm:pool', function () {
-    run('sed -i "s/^user = www-data/user = deployer/" /etc/php/{{php_version}}/fpm/pool.d/www.conf');
-    run('sed -i "s/^group = www-data/group = deployer/" /etc/php/{{php_version}}/fpm/pool.d/www.conf');
-    run('sed -i "s/;listen\.owner.*/listen.owner = deployer/" /etc/php/{{php_version}}/fpm/pool.d/www.conf');
-    run('sed -i "s/;listen\.group.*/listen.group = deployer/" /etc/php/{{php_version}}/fpm/pool.d/www.conf');
-    run('sed -i "s/;listen\.mode.*/listen.mode = 0666/" /etc/php/{{php_version}}/fpm/pool.d/www.conf');
-    run('sed -i "s/;request_terminate_timeout.*/request_terminate_timeout = 60/" /etc/php/{{php_version}}/fpm/pool.d/www.conf');
-});
-
-desc('Configure php sessions directory');
-task('provision:config:php:sessions', function () {
-    run('chmod 733 /var/lib/php/sessions');
-    run('chmod +t /var/lib/php/sessions');
-});
-
-desc('Generating DH (Diffie Hellman) key');
-task('provision:nginx:dhparam', function () {
-    if (test('[ -f /etc/nginx/dhparams.pem ]')) {
-        info('/etc/nginx/dhparams.pem already exist');
-    } else {
-        info('Generating DH key, 2048 bit long safe prime');
-        info('This is going to take a long time');
-        run('openssl dhparam -out /etc/nginx/dhparams.pem 2048 2>/dev/null');
-    }
-});
-
-desc('Install nginx & php-fpm');
-task('provision:nginx', function () {
-    run('systemctl enable nginx.service');
-
-    run('sed -i "s/user www-data;/user deployer;/" /etc/nginx/nginx.conf');
-    run('sed -i "s/worker_processes.*/worker_processes auto;/" /etc/nginx/nginx.conf');
-    run('sed -i "s/# multi_accept.*/multi_accept on;/" /etc/nginx/nginx.conf');
-    run('sed -i "s/# server_names_hash_bucket_size.*/server_names_hash_bucket_size 128;/" /etc/nginx/nginx.conf');
-
-    run('cat > /etc/nginx/conf.d/gzip.conf << EOF
-gzip_vary on;
-gzip_proxied any;
-gzip_comp_level 5;
-gzip_min_length 256;
-
-gzip_types application/atom+xml application/javascript application/json application/rss+xml application/vnd.ms-fontobject application/x-font-ttf application/x-web-app-manifest+json application/xhtml+xml application/xml font/opentype image/svg+xml image/x-icon text/css text/plain text/x-component;
-EOF');
-
-    run('cat > /etc/nginx/sites-available/default << EOF
-server {
-    return 404;
-}
-EOF');
-    run('ln -sf /etc/nginx/sites-available/default /etc/nginx/sites-enabled/default');
-    run('service nginx restart');
-
-    run('service php{{php_version}}-fpm restart');
 });

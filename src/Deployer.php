@@ -9,9 +9,8 @@ namespace Deployer;
 
 use Deployer\Collection\Collection;
 use Deployer\Command\AutocompleteCommand;
+use Deployer\Command\BlackjackCommand;
 use Deployer\Command\ConfigCommand;
-use Deployer\Command\ConnectCommand;
-use Deployer\Command\DiceCommand;
 use Deployer\Command\InitCommand;
 use Deployer\Command\MainCommand;
 use Deployer\Command\RunCommand;
@@ -30,6 +29,7 @@ use Deployer\Executor\Messenger;
 use Deployer\Executor\Server;
 use Deployer\Host\Host;
 use Deployer\Host\HostCollection;
+use Deployer\Host\Localhost;
 use Deployer\Importer\Importer;
 use Deployer\Logger\Handler\FileHandler;
 use Deployer\Logger\Handler\NullHandler;
@@ -118,7 +118,12 @@ class Deployer extends Container
         };
         // -l  act as if it had been invoked as a login shell (i.e. source ~/.profile file)
         // -s  commands are read from the standard input (no arguments should remain after this option)
-        $this->config['shell'] = 'bash -ls';
+        $this->config['shell'] = function () {
+            if (currentHost() instanceof Localhost) {
+                return 'bash -s'; // Non-login shell for localhost.
+            }
+            return 'bash -ls';
+        };
         $this->config['forward_agent'] = true;
         $this->config['ssh_multiplexing'] = true;
 
@@ -154,13 +159,13 @@ class Deployer extends Container
             return new Collection();
         };
         $this['messenger'] = function ($c) {
-            return new Messenger($c['input'], $c['output']);
+            return new Messenger($c['input'], $c['output'], $c['logger']);
         };
         $this['server'] = function ($c) {
             return new Server(
                 $c['input'],
                 $c['output'],
-                $c['questionHelper'],
+                $this,
             );
         };
         $this['master'] = function ($c) {
@@ -170,7 +175,6 @@ class Deployer extends Container
                 $c['server'],
                 $c['messenger'],
                 $c['sshClient'],
-                $c['config']
             );
         };
         $this['importer'] = function () {
@@ -182,8 +186,8 @@ class Deployer extends Container
          ******************************/
 
         $this['log_handler'] = function () {
-            return !empty($this['log_file'])
-                ? new FileHandler($this['log_file'])
+            return !empty($this['log'])
+                ? new FileHandler($this['log'])
                 : new NullHandler();
         };
         $this['logger'] = function () {
@@ -204,11 +208,10 @@ class Deployer extends Container
     public function init()
     {
         $this->addTaskCommands();
-        $this->getConsole()->add(new AutocompleteCommand());
-        $this->getConsole()->add(new ConnectCommand($this));
+        $this->getConsole()->add(new AutocompleteCommand($this));
+        $this->getConsole()->add(new BlackjackCommand());
         $this->getConsole()->add(new ConfigCommand($this));
         $this->getConsole()->add(new WorkerCommand($this));
-        $this->getConsole()->add(new DiceCommand());
         $this->getConsole()->add(new InitCommand());
         $this->getConsole()->add(new TreeCommand($this));
         $this->getConsole()->add(new SshCommand($this));
@@ -217,6 +220,7 @@ class Deployer extends Container
             $selfUpdate = new PharUpdateCommand('self-update');
             $selfUpdate->setDescription('Updates deployer.phar to the latest version');
             $selfUpdate->setManifestUri('https://deployer.org/manifest.json');
+            $selfUpdate->setRunningFile(DEPLOYER_BIN);
             $this->getConsole()->add($selfUpdate);
             $this->getConsole()->getHelperSet()->set(new PharUpdateHelper());
         }
@@ -271,6 +275,24 @@ class Deployer extends Container
      */
     public static function run(string $version, ?string $deployFile)
     {
+        if (str_contains($version, 'master')) {
+            // Get version from composer.lock
+            $lockFile = __DIR__ . '/../../../../composer.lock';
+            if (file_exists($lockFile)) {
+                $content = file_get_contents($lockFile);
+                $json = json_decode($content);
+                foreach ($json->packages as $package) {
+                    if ($package->name === 'deployer/deployer') {
+                        $version = $package->version;
+                    }
+                }
+            }
+        }
+
+        if (!defined('DEPLOYER_VERSION')) {
+            define('DEPLOYER_VERSION', $version);
+        }
+
         $input = new ArgvInput();
         $output = new ConsoleOutput();
 
@@ -293,6 +315,8 @@ class Deployer extends Container
                 $output->setVerbosity(OutputInterface::VERBOSITY_DEBUG);
             }
             self::printException($output, $exception);
+            
+            exit(1);
         }
     }
 
@@ -335,7 +359,7 @@ class Deployer extends Container
         usleep(100000); // Sleep 100ms.
         return Httpie::get(get('master_url') . '/proxy')
             ->setopt(CURLOPT_TIMEOUT, 0) // no timeout
-            ->body([
+            ->jsonBody([
                 'host' => $host->getAlias(),
                 'func' => $func,
                 'arguments' => $arguments,

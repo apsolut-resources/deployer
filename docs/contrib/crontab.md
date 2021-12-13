@@ -7,6 +7,7 @@
 [Source](/contrib/crontab.php)
 
 
+
 Recipe for adding crontab jobs.
 
 It checks for duplicates by the command part of the job. Changing the schedule will update the crontab. So when you change the command part you have to manually remove the old one. Use `crontab -e` on the server to remove it.
@@ -28,19 +29,30 @@ add('crontab:jobs', [
 ```
 
 
-* Tasks
-  * [`crontab:load`](#crontabload) — Load crontab
-  * [`crontab:sync`](#crontabsync) — Sync crontab jobs
+## Configuration
+### bin/crontab
+[Source](https://github.com/deployphp/deployer/blob/master/contrib/crontab.php#L26)
+
+Get path to bin
+
+
 
 
 ## Tasks
+
 ### crontab:load
-[Source](https://github.com/deployphp/deployer/search?q=%22crontab%3Aload%22+in%3Afile+language%3Aphp+path%3Acontrib+filename%3Acrontab.php)
+[Source](https://github.com/deployphp/deployer/blob/master/contrib/crontab.php#L31)
+
+Loads crontab.
+
 
 
 
 ### crontab:sync
-[Source](https://github.com/deployphp/deployer/search?q=%22crontab%3Async%22+in%3Afile+language%3Aphp+path%3Acontrib+filename%3Acrontab.php)
+[Source](https://github.com/deployphp/deployer/blob/master/contrib/crontab.php#L56)
+
+Sync crontab jobs.
+
 
 
 

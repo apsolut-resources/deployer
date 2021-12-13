@@ -17,7 +17,6 @@ use Symfony\Component\Console\Input\InputInterface as Input;
 use Symfony\Component\Console\Input\InputOption as Option;
 use Symfony\Component\Console\Output\OutputInterface as Output;
 use function Deployer\Support\find_config_line;
-use function Deployer\Support\fork;
 use function Deployer\warning;
 
 class MainCommand extends SelectCommand
@@ -88,23 +87,36 @@ class MainCommand extends SelectCommand
     {
         $this->deployer->input = $input;
         $this->deployer->output = $output;
-        $this->deployer['log_file'] = $input->getOption('log');
+        $this->deployer['log'] = $input->getOption('log');
         $this->telemetry([
             'project_hash' => empty($this->deployer->config['repository']) ? null : sha1($this->deployer->config['repository']),
             'hosts_count' => $this->deployer->hosts->count(),
             'recipes' => $this->deployer->config->get('recipes', []),
         ]);
+
         $hosts = $this->selectHosts($input, $output);
         $this->applyOverrides($hosts, $input->getOption('option'));
+
+        // Save selected_hosts for selectedHosts() func.
+        $hostsAliases = [];
+        foreach ($hosts as $host) {
+            $hostsAliases[] = $host->getAlias();
+        }
+        // Save selected_hosts per each host, and not globally. Otherwise it will
+        // not be accessible for workers.
+        foreach ($hosts as $host) {
+            $host->set('selected_hosts', $hostsAliases);
+        }
 
         $plan = $input->getOption('plan') ? new Planner($output, $hosts) : null;
 
         $this->deployer->scriptManager->setHooksEnabled(!$input->getOption('no-hooks'));
         $startFrom = $input->getOption('start-from');
         if ($startFrom && !$this->deployer->tasks->has($startFrom)) {
-            throw new Exception("Task ${startFrom} does not exist.");
+            throw new Exception("Task $startFrom does not exist.");
         }
-        $tasks = $this->deployer->scriptManager->getTasks($this->getName(), $startFrom);
+        $skippedTasks = [];
+        $tasks = $this->deployer->scriptManager->getTasks($this->getName(), $startFrom, $skippedTasks);
 
         if (empty($tasks)) {
             throw new Exception('No task will be executed, because the selected hosts do not meet the conditions of the tasks');
@@ -113,8 +125,13 @@ class MainCommand extends SelectCommand
         if (!$plan) {
             $this->checkUpdates();
             $this->validateConfig();
-            $this->deployer->server->start();
             $this->deployer->master->connect($hosts);
+            $this->deployer->server->start();
+            if (!empty($skippedTasks)) {
+                foreach ($skippedTasks as $taskName) {
+                    $output->writeln("<fg=yellow;options=bold>skip</> $taskName");
+                }
+            }
         }
         $exitCode = $this->deployer->master->run($tasks, $hosts, $plan);
 
@@ -124,6 +141,7 @@ class MainCommand extends SelectCommand
         }
 
         if ($exitCode === 0) {
+            $this->showBanner();
             return 0;
         }
         if ($exitCode === GracefulShutdownException::EXIT_CODE) {
@@ -142,13 +160,21 @@ class MainCommand extends SelectCommand
 
     private function checkUpdates()
     {
-        fork(function () {
-            try {
-                $this->deployer->output->write(Httpie::get('https://deployer.org/check-updates/' . DEPLOYER_VERSION)->send());
-            } catch (\Throwable $e) {
-                // Meh
-            }
-        });
+        try {
+            fwrite(STDERR, Httpie::get('https://deployer.org/check-updates/' . DEPLOYER_VERSION)->send());
+        } catch (\Throwable $e) {
+            // Meh
+        }
+    }
+
+    private function showBanner()
+    {
+        try {
+            $withColors = getenv('COLORTERM') === 'truecolor' ? '_with_colors' : '';
+            fwrite(STDERR, Httpie::get("https://deployer.org/banners/" . $this->getName() . $withColors)->send());
+        } catch (\Throwable $e) {
+            // Meh
+        }
     }
 
     private function validateConfig(): void

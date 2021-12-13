@@ -65,20 +65,21 @@ namespace Deployer;
 
 use Closure;
 use DateTime;
+use Deployer\Exception\ConfigurationException;
 use Deployer\Utility\Httpie;
 
-desc('Notifying Sentry of deployment');
+desc('Notifies Sentry of deployment');
 task(
     'deploy:sentry',
     static function () {
         $now = date('c');
 
         $defaultConfig = [
-            'version' => null,
+            'version' => getReleaseGitRef(),
             'version_prefix' => null,
             'refs' => [],
             'ref' => null,
-            'commits' => null,
+            'commits' => getGitCommitsRefs(),
             'url' => null,
             'date_released' => $now,
             'date_deploy_started' => $now,
@@ -88,11 +89,6 @@ task(
             'environment' => get('symfony_env', 'prod'),
             'deploy_name' => null,
         ];
-
-        if (releaseIsGitDirectory()) {
-            $defaultConfig['version'] = getReleaseGitRef();
-            $defaultConfig['commits'] = getGitCommitsRefs();
-        }
 
         $config = array_merge($defaultConfig, (array) get('sentry'));
         array_walk(
@@ -143,8 +139,8 @@ EXAMPLE
         $response = Httpie::post(
             $releasesApiUrl
         )
-            ->header(sprintf('Authorization: Bearer %s', $config['token']))
-            ->body($releaseData)
+            ->header('Authorization', sprintf('Bearer %s', $config['token']))
+            ->jsonBody($releaseData)
             ->getJson();
 
         if (!isset($response['version'], $response['projects'])) {
@@ -173,8 +169,8 @@ EXAMPLE
         $response = Httpie::post(
             $releasesApiUrl . $response['version'] . '/deploys/'
         )
-            ->header(sprintf('Authorization: Bearer %s', $config['token']))
-            ->body($deployData)
+            ->header('Authorization', sprintf('Bearer %s', $config['token']))
+            ->jsonBody($deployData)
             ->getJson();
 
         if (!isset($response['id'], $response['environment'])) {
@@ -192,14 +188,55 @@ EXAMPLE
     }
 );
 
-function releaseIsGitDirectory()
+function getPreviousReleaseRevision()
 {
-    return (bool) run('cd {{release_path}} && git rev-parse --git-dir > /dev/null 2>&1 && echo 1 || echo 0');
+    switch (get('update_code_strategy')) {
+        case 'archive':
+            if (has('previous_release')) {
+                return run('cat {{previous_release}}/REVISION');
+            }
+
+            return null;
+        case 'clone':
+            if (has('previous_release')) {
+                cd('{{previous_release}}');
+                return trim(run('git rev-parse HEAD'));
+            }
+
+            return null;
+        default:
+            throw new ConfigurationException(parse("Unknown `update_code_strategy` option: {{update_code_strategy}}."));
+    }
+}
+
+function getCurrentReleaseRevision()
+{
+    switch (get('update_code_strategy')) {
+        case 'archive':
+            return run('cat {{release_path}}/REVISION');
+
+        case 'clone':
+            cd('{{release_path}}');
+            return trim(run('git rev-parse HEAD'));
+
+        default:
+            throw new ConfigurationException(parse("Unknown `update_code_strategy` option: {{update_code_strategy}}."));
+    }
 }
 
 function getReleaseGitRef(): Closure
 {
     return static function ($config = []): string {
+        if (get('update_code_strategy') === 'archive') {
+            if (isset($config['git_version_command'])) {
+                cd('{{deploy_path}}/.dep/repo');
+
+                return trim(run($config['git_version_command']));
+            }
+
+            return run('cat {{current_path}}/REVISION');
+        }
+
         cd('{{release_path}}');
 
         if (isset($config['git_version_command'])) {
@@ -213,22 +250,23 @@ function getReleaseGitRef(): Closure
 function getGitCommitsRefs(): Closure
 {
     return static function ($config = []): array {
-        $previousReleaseRevision = null;
-
-        if (has('previous_release')) {
-            cd('{{previous_release}}');
-            $previousReleaseRevision = trim(run('git rev-parse HEAD'));
-        }
+        $previousReleaseRevision = getPreviousReleaseRevision();
+        $currentReleaseRevision = getCurrentReleaseRevision() ?: 'HEAD';
 
         if ($previousReleaseRevision === null) {
-            $commitRange = 'HEAD';
+            $commitRange = $currentReleaseRevision;
         } else {
-            $commitRange = $previousReleaseRevision . '..HEAD';
+            $commitRange = $previousReleaseRevision . '..' . $currentReleaseRevision;
         }
 
-        cd('{{release_path}}');
-
         try {
+            if (get('update_code_strategy') === 'archive') {
+                cd('{{deploy_path}}/.dep/repo');
+            }
+            else {
+                cd('{{release_path}}');
+            }
+
             $result = run(sprintf('git rev-list --pretty="%s" %s', 'format:%H#%an#%ae#%at#%s', $commitRange));
             $lines = array_filter(
             // limit number of commits for first release with many commits
@@ -240,14 +278,14 @@ function getGitCommitsRefs(): Closure
 
             return array_map(
                 static function (string $line): array {
-                    list($ref, $authorName, $authorEmail, $timestamp, $message) = explode('#', $line, 5);
+                    [$ref, $authorName, $authorEmail, $timestamp, $message] = explode('#', $line, 5);
 
                     return [
                         'id' => $ref,
                         'author_name' => $authorName,
                         'author_email' => $authorEmail,
                         'message' => $message,
-                        'timestamp' => date(DateTime::ATOM, (int) $timestamp),
+                        'timestamp' => date(\DateTime::ATOM, (int) $timestamp),
                     ];
                 },
                 $lines

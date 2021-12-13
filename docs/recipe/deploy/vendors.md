@@ -7,46 +7,44 @@
 [Source](/recipe/deploy/vendors.php)
 
 
-
-* Config
-  * [`composer_action`](#composer_action)
-  * [`composer_options`](#composer_options)
-  * [`composer_version`](#composer_version)
-  * [`composer_channel`](#composer_channel)
-* Tasks
-  * [`deploy:vendors`](#deployvendors) — Installing vendors
-
-## Config
+## Configuration
 ### composer_action
-[Source](https://github.com/deployphp/deployer/search?q=%22composer_action%22+in%3Afile+language%3Aphp+path%3Arecipe%2Fdeploy+filename%3Avendors.php)
+[Source](https://github.com/deployphp/deployer/blob/master/recipe/deploy/vendors.php#L4)
 
+
+
+```php title="Default value"
+'install'
+```
 
 
 ### composer_options
-[Source](https://github.com/deployphp/deployer/search?q=%22composer_options%22+in%3Afile+language%3Aphp+path%3Arecipe%2Fdeploy+filename%3Avendors.php)
+[Source](https://github.com/deployphp/deployer/blob/master/recipe/deploy/vendors.php#L6)
 
 
 
-### composer_version
-[Source](https://github.com/deployphp/deployer/search?q=%22composer_version%22+in%3Afile+language%3Aphp+path%3Arecipe%2Fdeploy+filename%3Avendors.php)
-
-Can be used to choose what composer version to install.
-Valid values are any that are [listed here](https://getcomposer.org/download/).
-
-For example:
-```php
-    set('composer_version', '10.10.15')
+```php title="Default value"
+'--verbose --prefer-dist --no-progress --no-interaction --no-dev --optimize-autoloader'
 ```
 
-### composer_channel
-[Source](https://github.com/deployphp/deployer/search?q=%22composer_channel%22+in%3Afile+language%3Aphp+path%3Arecipe%2Fdeploy+filename%3Avendors.php)
 
-Set this variable to stable, snapshot, preview, 1 or 2 to select which Composer channel to use
+### bin/composer
+[Source](https://github.com/deployphp/deployer/blob/master/recipe/deploy/vendors.php#L11)
+
+Returns Composer binary path in found. Otherwise try to install latest
+composer version to `.dep/composer.phar`. To use specific composer version
+download desired phar and place it at `.dep/composer.phar`.
+
+
 
 
 ## Tasks
+
 ### deploy:vendors
-[Source](https://github.com/deployphp/deployer/search?q=%22deploy%3Avendors%22+in%3Afile+language%3Aphp+path%3Arecipe%2Fdeploy+filename%3Avendors.php)
+[Source](https://github.com/deployphp/deployer/blob/master/recipe/deploy/vendors.php#L27)
+
+Installs vendors.
+
 
 
 

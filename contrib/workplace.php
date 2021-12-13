@@ -81,7 +81,7 @@ set('workplace_failure_text', 'Deploy to *{{target}}* failed');
 // By default, create a new post for every message
 set('workplace_edit_post', false);
 
-desc('Notifying Workplace');
+desc('Notifies Workplace');
 task('workplace:notify', function () {
     if (!get('workplace_webhook', false)) {
         return;
@@ -103,10 +103,9 @@ task('workplace:notify', function () {
     }
 })
     ->once()
-    ->shallow()
     ->hidden();
 
-desc('Notifying Workplace about deploy finish');
+desc('Notifies Workplace about deploy finish');
 task('workplace:notify:success', function () {
     if (!get('workplace_webhook', false)) {
         return;
@@ -115,10 +114,9 @@ task('workplace:notify:success', function () {
     return Httpie::post($url)->send();
 })
     ->once()
-    ->shallow()
     ->hidden();
 
-desc('Notifying Workplace about deploy failure');
+desc('Notifies Workplace about deploy failure');
 task('workplace:notify:failure', function () {
     if (!get('workplace_webhook', false)) {
         return;
@@ -127,5 +125,4 @@ task('workplace:notify:failure', function () {
     return Httpie::post($url)->send();
 })
     ->once()
-    ->shallow()
     ->hidden();

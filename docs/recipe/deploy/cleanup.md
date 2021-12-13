@@ -7,14 +7,25 @@
 [Source](/recipe/deploy/cleanup.php)
 
 
+## Configuration
+### cleanup_use_sudo
+[Source](https://github.com/deployphp/deployer/blob/master/recipe/deploy/cleanup.php#L5)
 
-* Tasks
-  * [`deploy:cleanup`](#deploycleanup) — Cleaning up old releases
+Use sudo in deploy:cleanup task for rm command.
+
+```php title="Default value"
+false
+```
+
 
 
 ## Tasks
+
 ### deploy:cleanup
-[Source](https://github.com/deployphp/deployer/search?q=%22deploy%3Acleanup%22+in%3Afile+language%3Aphp+path%3Arecipe%2Fdeploy+filename%3Acleanup.php)
+[Source](https://github.com/deployphp/deployer/blob/master/recipe/deploy/cleanup.php#L8)
+
+Cleanups old releases.
+
 
 
 

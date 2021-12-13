@@ -6,66 +6,83 @@
 
 [Source](/recipe/silverstripe.php)
 
+* Requires
+  * [common](/docs/recipe/common.md)
 
-
-* Require
-  * [`recipe/common.php`](/docs/recipe/common.md)
-* Config
-  * [`shared_assets`](#shared_assets)
-  * [`shared_dirs`](#shared_dirs)
-  * [`writable_dirs`](#writable_dirs)
-  * [`silverstripe_cli_script`](#silverstripe_cli_script)
-* Tasks
-  * [`silverstripe:build`](#silverstripebuild) — Run /dev/build
-  * [`silverstripe:buildflush`](#silverstripebuildflush) — Run /dev/build?flush=all
-  * [`deploy`](#deploy) — Deploy your project
-
-## Config
+## Configuration
 ### shared_assets
-[Source](https://github.com/deployphp/deployer/search?q=%22shared_assets%22+in%3Afile+language%3Aphp+path%3Arecipe+filename%3Asilverstripe.php)
+[Source](https://github.com/deployphp/deployer/blob/master/recipe/silverstripe.php#L12)
+
+
 
 
 
 ### shared_dirs
-[Source](https://github.com/deployphp/deployer/search?q=%22shared_dirs%22+in%3Afile+language%3Aphp+path%3Arecipe+filename%3Asilverstripe.php)
+[Source](https://github.com/deployphp/deployer/blob/master/recipe/silverstripe.php#L21)
 
-* Overrides [`shared_dirs`](/docs/recipe/common.md#shared_dirs) from `recipe/common.php`
+Overrides [shared_dirs](/docs/recipe/deploy/shared.md#shared_dirs) from `recipe/deploy/shared.php`.
 
 Silverstripe shared dirs
 
-### writable_dirs
-[Source](https://github.com/deployphp/deployer/search?q=%22writable_dirs%22+in%3Afile+language%3Aphp+path%3Arecipe+filename%3Asilverstripe.php)
+```php title="Default value"
+[
+    '{{shared_assets}}'
+]
+```
 
-* Overrides [`writable_dirs`](/docs/recipe/deploy/writable.md#writable_dirs) from `recipe/deploy/writable.php`
+
+### writable_dirs
+[Source](https://github.com/deployphp/deployer/blob/master/recipe/silverstripe.php#L26)
+
+Overrides [writable_dirs](/docs/recipe/deploy/writable.md#writable_dirs) from `recipe/deploy/writable.php`.
 
 Silverstripe writable dirs
 
+```php title="Default value"
+[
+    '{{shared_assets}}'
+]
+```
+
+
 ### silverstripe_cli_script
-[Source](https://github.com/deployphp/deployer/search?q=%22silverstripe_cli_script%22+in%3Afile+language%3Aphp+path%3Arecipe+filename%3Asilverstripe.php)
+[Source](https://github.com/deployphp/deployer/blob/master/recipe/silverstripe.php#L31)
 
 Silverstripe cli script
 
 
+
+
 ## Tasks
+
 ### silverstripe:build
-[Source](https://github.com/deployphp/deployer/search?q=%22silverstripe%3Abuild%22+in%3Afile+language%3Aphp+path%3Arecipe+filename%3Asilverstripe.php)
+[Source](https://github.com/deployphp/deployer/blob/master/recipe/silverstripe.php#L47)
+
+Runs /dev/build.
 
 Helper tasks
 
+
 ### silverstripe:buildflush
-[Source](https://github.com/deployphp/deployer/search?q=%22silverstripe%3Abuildflush%22+in%3Afile+language%3Aphp+path%3Arecipe+filename%3Asilverstripe.php)
+[Source](https://github.com/deployphp/deployer/blob/master/recipe/silverstripe.php#L52)
+
+Runs /dev/build?flush=all.
+
 
 
 
 ### deploy
-[Source](https://github.com/deployphp/deployer/search?q=%22deploy%22+in%3Afile+language%3Aphp+path%3Arecipe+filename%3Asilverstripe.php)
+[Source](https://github.com/deployphp/deployer/blob/master/recipe/silverstripe.php#L60)
+
+Deploys your project.
 
 Main task
 
+
 This task is group task which contains next tasks:
-* [`deploy:prepare`](/docs/recipe/common.md#deployprepare)
-* [`deploy:vendors`](/docs/recipe/deploy/vendors.md#deployvendors)
-* [`silverstripe:buildflush`](/docs/recipe/silverstripe.md#silverstripebuildflush)
-* [`deploy:publish`](/docs/recipe/common.md#deploypublish)
+* [deploy:prepare](/docs/recipe/common.md#deployprepare)
+* [deploy:vendors](/docs/recipe/deploy/vendors.md#deployvendors)
+* [silverstripe:buildflush](/docs/recipe/silverstripe.md#silverstripebuildflush)
+* [deploy:publish](/docs/recipe/common.md#deploypublish)
 
 

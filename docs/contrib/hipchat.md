@@ -7,6 +7,7 @@
 [Source](/contrib/hipchat.php)
 
 
+
 ## Installing
 
 Add to your _deploy.php_
@@ -34,39 +35,55 @@ after('deploy', 'hipchat:notify');
 
 
 
-* Config
-  * [`hipchat_color`](#hipchat_color)
-  * [`hipchat_from`](#hipchat_from)
-  * [`hipchat_message`](#hipchat_message)
-  * [`hipchat_url`](#hipchat_url)
-* Tasks
-  * [`hipchat:notify`](#hipchatnotify) — Notifying Hipchat channel of deployment
-
-## Config
+## Configuration
 ### hipchat_color
-[Source](https://github.com/deployphp/deployer/search?q=%22hipchat_color%22+in%3Afile+language%3Aphp+path%3Acontrib+filename%3Ahipchat.php)
+[Source](https://github.com/deployphp/deployer/blob/master/contrib/hipchat.php#L33)
 
+
+
+```php title="Default value"
+'green'
+```
 
 
 ### hipchat_from
-[Source](https://github.com/deployphp/deployer/search?q=%22hipchat_from%22+in%3Afile+language%3Aphp+path%3Acontrib+filename%3Ahipchat.php)
+[Source](https://github.com/deployphp/deployer/blob/master/contrib/hipchat.php#L34)
 
+
+
+```php title="Default value"
+'{{target}}'
+```
 
 
 ### hipchat_message
-[Source](https://github.com/deployphp/deployer/search?q=%22hipchat_message%22+in%3Afile+language%3Aphp+path%3Acontrib+filename%3Ahipchat.php)
+[Source](https://github.com/deployphp/deployer/blob/master/contrib/hipchat.php#L35)
 
+
+
+```php title="Default value"
+'_{{user}}_ deploying `{{branch}}` to *{{target}}*'
+```
 
 
 ### hipchat_url
-[Source](https://github.com/deployphp/deployer/search?q=%22hipchat_url%22+in%3Afile+language%3Aphp+path%3Acontrib+filename%3Ahipchat.php)
+[Source](https://github.com/deployphp/deployer/blob/master/contrib/hipchat.php#L36)
 
+
+
+```php title="Default value"
+'https://api.hipchat.com/v1/rooms/message'
+```
 
 
 
 ## Tasks
+
 ### hipchat:notify
-[Source](https://github.com/deployphp/deployer/search?q=%22hipchat%3Anotify%22+in%3Afile+language%3Aphp+path%3Acontrib+filename%3Ahipchat.php)
+[Source](https://github.com/deployphp/deployer/blob/master/contrib/hipchat.php#L39)
+
+Notifies Hipchat channel of deployment.
+
 
 
 

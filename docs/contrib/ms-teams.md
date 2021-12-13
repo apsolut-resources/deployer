@@ -7,6 +7,7 @@
 [Source](/contrib/ms-teams.php)
 
 
+
 ## Installing
 
 Require ms-teams recipe in your `deploy.php` file:
@@ -78,69 +79,98 @@ after('deploy:failed', 'teams:notify:failure');
 ```
 
 
-* Config
-  * [`teams_title`](#teams_title)
-  * [`teams_text`](#teams_text)
-  * [`teams_success_text`](#teams_success_text)
-  * [`teams_failure_text`](#teams_failure_text)
-  * [`teams_color`](#teams_color)
-  * [`teams_success_color`](#teams_success_color)
-  * [`teams_failure_color`](#teams_failure_color)
-* Tasks
-  * [`teams:notify`](#teamsnotify) — Notifying Teams
-  * [`teams:notify:success`](#teamsnotifysuccess) — Notifying Teams about deploy finish
-  * [`teams:notify:failure`](#teamsnotifyfailure) — Notifying Teams about deploy failure
-
-## Config
+## Configuration
 ### teams_title
-[Source](https://github.com/deployphp/deployer/search?q=%22teams_title%22+in%3Afile+language%3Aphp+path%3Acontrib+filename%3Ams-teams.php)
+[Source](https://github.com/deployphp/deployer/blob/master/contrib/ms-teams.php#L78)
 
 Title of project
 
+
+
 ### teams_text
-[Source](https://github.com/deployphp/deployer/search?q=%22teams_text%22+in%3Afile+language%3Aphp+path%3Acontrib+filename%3Ams-teams.php)
+[Source](https://github.com/deployphp/deployer/blob/master/contrib/ms-teams.php#L83)
 
 Deploy message
 
-### teams_success_text
-[Source](https://github.com/deployphp/deployer/search?q=%22teams_success_text%22+in%3Afile+language%3Aphp+path%3Acontrib+filename%3Ams-teams.php)
+```php title="Default value"
+'_{{user}}_ deploying `{{branch}}` to *{{target}}*'
+```
 
+
+### teams_success_text
+[Source](https://github.com/deployphp/deployer/blob/master/contrib/ms-teams.php#L84)
+
+
+
+```php title="Default value"
+'Deploy to *{{target}}* successful'
+```
 
 
 ### teams_failure_text
-[Source](https://github.com/deployphp/deployer/search?q=%22teams_failure_text%22+in%3Afile+language%3Aphp+path%3Acontrib+filename%3Ams-teams.php)
+[Source](https://github.com/deployphp/deployer/blob/master/contrib/ms-teams.php#L85)
 
+
+
+```php title="Default value"
+'Deploy to *{{target}}* failed'
+```
 
 
 ### teams_color
-[Source](https://github.com/deployphp/deployer/search?q=%22teams_color%22+in%3Afile+language%3Aphp+path%3Acontrib+filename%3Ams-teams.php)
+[Source](https://github.com/deployphp/deployer/blob/master/contrib/ms-teams.php#L88)
 
 Color of attachment
 
-### teams_success_color
-[Source](https://github.com/deployphp/deployer/search?q=%22teams_success_color%22+in%3Afile+language%3Aphp+path%3Acontrib+filename%3Ams-teams.php)
+```php title="Default value"
+'#4d91f7'
+```
 
+
+### teams_success_color
+[Source](https://github.com/deployphp/deployer/blob/master/contrib/ms-teams.php#L89)
+
+
+
+```php title="Default value"
+'#00c100'
+```
 
 
 ### teams_failure_color
-[Source](https://github.com/deployphp/deployer/search?q=%22teams_failure_color%22+in%3Afile+language%3Aphp+path%3Acontrib+filename%3Ams-teams.php)
+[Source](https://github.com/deployphp/deployer/blob/master/contrib/ms-teams.php#L90)
 
+
+
+```php title="Default value"
+'#ff0909'
+```
 
 
 
 ## Tasks
+
 ### teams:notify
-[Source](https://github.com/deployphp/deployer/search?q=%22teams%3Anotify%22+in%3Afile+language%3Aphp+path%3Acontrib+filename%3Ams-teams.php)
+[Source](https://github.com/deployphp/deployer/blob/master/contrib/ms-teams.php#L93)
+
+Notifies Teams.
+
 
 
 
 ### teams:notify:success
-[Source](https://github.com/deployphp/deployer/search?q=%22teams%3Anotify%3Asuccess%22+in%3Afile+language%3Aphp+path%3Acontrib+filename%3Ams-teams.php)
+[Source](https://github.com/deployphp/deployer/blob/master/contrib/ms-teams.php#L107)
+
+Notifies Teams about deploy finish.
+
 
 
 
 ### teams:notify:failure
-[Source](https://github.com/deployphp/deployer/search?q=%22teams%3Anotify%3Afailure%22+in%3Afile+language%3Aphp+path%3Acontrib+filename%3Ams-teams.php)
+[Source](https://github.com/deployphp/deployer/blob/master/contrib/ms-teams.php#L121)
+
+Notifies Teams about deploy failure.
+
 
 
 

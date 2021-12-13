@@ -7,6 +7,7 @@
 [Source](/contrib/workplace.php)
 
 
+
 ## Installing
 
 This recipes works with Custom Integrations and Publishing Bots.
@@ -77,51 +78,71 @@ after('deploy:failed', 'workplace:notify:failure');
 
 
 
-* Config
-  * [`workplace_text`](#workplace_text)
-  * [`workplace_success_text`](#workplace_success_text)
-  * [`workplace_failure_text`](#workplace_failure_text)
-  * [`workplace_edit_post`](#workplace_edit_post)
-* Tasks
-  * [`workplace:notify`](#workplacenotify) — Notifying Workplace
-  * [`workplace:notify:success`](#workplacenotifysuccess) — Notifying Workplace about deploy finish
-  * [`workplace:notify:failure`](#workplacenotifyfailure) — Notifying Workplace about deploy failure
-
-## Config
+## Configuration
 ### workplace_text
-[Source](https://github.com/deployphp/deployer/search?q=%22workplace_text%22+in%3Afile+language%3Aphp+path%3Acontrib+filename%3Aworkplace.php)
+[Source](https://github.com/deployphp/deployer/blob/master/contrib/workplace.php#L77)
 
 Deploy message
 
-### workplace_success_text
-[Source](https://github.com/deployphp/deployer/search?q=%22workplace_success_text%22+in%3Afile+language%3Aphp+path%3Acontrib+filename%3Aworkplace.php)
+```php title="Default value"
+'_{{user}}_ deploying `{{branch}}` to *{{target}}*'
+```
 
+
+### workplace_success_text
+[Source](https://github.com/deployphp/deployer/blob/master/contrib/workplace.php#L78)
+
+
+
+```php title="Default value"
+'Deploy to *{{target}}* successful'
+```
 
 
 ### workplace_failure_text
-[Source](https://github.com/deployphp/deployer/search?q=%22workplace_failure_text%22+in%3Afile+language%3Aphp+path%3Acontrib+filename%3Aworkplace.php)
+[Source](https://github.com/deployphp/deployer/blob/master/contrib/workplace.php#L79)
 
+
+
+```php title="Default value"
+'Deploy to *{{target}}* failed'
+```
 
 
 ### workplace_edit_post
-[Source](https://github.com/deployphp/deployer/search?q=%22workplace_edit_post%22+in%3Afile+language%3Aphp+path%3Acontrib+filename%3Aworkplace.php)
+[Source](https://github.com/deployphp/deployer/blob/master/contrib/workplace.php#L82)
 
 By default, create a new post for every message
 
+```php title="Default value"
+false
+```
+
+
 
 ## Tasks
+
 ### workplace:notify
-[Source](https://github.com/deployphp/deployer/search?q=%22workplace%3Anotify%22+in%3Afile+language%3Aphp+path%3Acontrib+filename%3Aworkplace.php)
+[Source](https://github.com/deployphp/deployer/blob/master/contrib/workplace.php#L85)
+
+Notifies Workplace.
+
 
 
 
 ### workplace:notify:success
-[Source](https://github.com/deployphp/deployer/search?q=%22workplace%3Anotify%3Asuccess%22+in%3Afile+language%3Aphp+path%3Acontrib+filename%3Aworkplace.php)
+[Source](https://github.com/deployphp/deployer/blob/master/contrib/workplace.php#L109)
+
+Notifies Workplace about deploy finish.
+
 
 
 
 ### workplace:notify:failure
-[Source](https://github.com/deployphp/deployer/search?q=%22workplace%3Anotify%3Afailure%22+in%3Afile+language%3Aphp+path%3Acontrib+filename%3Aworkplace.php)
+[Source](https://github.com/deployphp/deployer/blob/master/contrib/workplace.php#L120)
+
+Notifies Workplace about deploy failure.
+
 
 
 

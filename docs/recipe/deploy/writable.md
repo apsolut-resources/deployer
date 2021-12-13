@@ -7,64 +7,82 @@
 [Source](/recipe/deploy/writable.php)
 
 
-
-* Config
-  * [`http_user`](#http_user)
-  * [`http_group`](#http_group)
-  * [`writable_dirs`](#writable_dirs)
-  * [`writable_mode`](#writable_mode)
-  * [`writable_use_sudo`](#writable_use_sudo)
-  * [`writable_recursive`](#writable_recursive)
-  * [`writable_chmod_mode`](#writable_chmod_mode)
-  * [`writable_chmod_recursive`](#writable_chmod_recursive)
-* Tasks
-  * [`deploy:writable`](#deploywritable) — Make writable dirs
-
-## Config
+## Configuration
 ### http_user
-[Source](https://github.com/deployphp/deployer/search?q=%22http_user%22+in%3Afile+language%3Aphp+path%3Arecipe%2Fdeploy+filename%3Awritable.php)
+[Source](https://github.com/deployphp/deployer/blob/master/recipe/deploy/writable.php#L9)
 
-Attempts automatically to detect http user in process list.
+
+
+
 
 ### http_group
-[Source](https://github.com/deployphp/deployer/search?q=%22http_group%22+in%3Afile+language%3Aphp+path%3Arecipe%2Fdeploy+filename%3Awritable.php)
+[Source](https://github.com/deployphp/deployer/blob/master/recipe/deploy/writable.php#L26)
+
+Used to make a writable directory by a server.
+Used in `chgrp` mode of [writable_mode](/docs/recipe/deploy/writable.md#writable_mode) only.
+Attempts automatically to detect http user in process list.
 
 
 
 ### writable_dirs
-[Source](https://github.com/deployphp/deployer/search?q=%22writable_dirs%22+in%3Afile+language%3Aphp+path%3Arecipe%2Fdeploy+filename%3Awritable.php)
+[Source](https://github.com/deployphp/deployer/blob/master/recipe/deploy/writable.php#L41)
 
 List of writable dirs.
 
-### writable_mode
-[Source](https://github.com/deployphp/deployer/search?q=%22writable_mode%22+in%3Afile+language%3Aphp+path%3Arecipe%2Fdeploy+filename%3Awritable.php)
 
-chmod, chown, chgrp or acl.
+
+### writable_mode
+[Source](https://github.com/deployphp/deployer/blob/master/recipe/deploy/writable.php#L48)
+
+One of:
+- chown
+- chgrp
+- chmod
+- acl
+
+```php title="Default value"
+'acl'
+```
+
 
 ### writable_use_sudo
-[Source](https://github.com/deployphp/deployer/search?q=%22writable_use_sudo%22+in%3Afile+language%3Aphp+path%3Arecipe%2Fdeploy+filename%3Awritable.php)
+[Source](https://github.com/deployphp/deployer/blob/master/recipe/deploy/writable.php#L51)
 
 Using sudo in writable commands?
 
-### writable_recursive
-[Source](https://github.com/deployphp/deployer/search?q=%22writable_recursive%22+in%3Afile+language%3Aphp+path%3Arecipe%2Fdeploy+filename%3Awritable.php)
+```php title="Default value"
+false
+```
 
-Common for all modes
+
+### writable_recursive
+[Source](https://github.com/deployphp/deployer/blob/master/recipe/deploy/writable.php#L54)
+
+Use recursive mode (-R)?
+
+```php title="Default value"
+false
+```
+
 
 ### writable_chmod_mode
-[Source](https://github.com/deployphp/deployer/search?q=%22writable_chmod_mode%22+in%3Afile+language%3Aphp+path%3Arecipe%2Fdeploy+filename%3Awritable.php)
+[Source](https://github.com/deployphp/deployer/blob/master/recipe/deploy/writable.php#L57)
 
-For chmod mode
+The chmod mode.
 
-### writable_chmod_recursive
-[Source](https://github.com/deployphp/deployer/search?q=%22writable_chmod_recursive%22+in%3Afile+language%3Aphp+path%3Arecipe%2Fdeploy+filename%3Awritable.php)
+```php title="Default value"
+'0755'
+```
 
-For chmod mode only (if is boolean, it has priority over `writable_recursive`)
 
 
 ## Tasks
+
 ### deploy:writable
-[Source](https://github.com/deployphp/deployer/search?q=%22deploy%3Awritable%22+in%3Afile+language%3Aphp+path%3Arecipe%2Fdeploy+filename%3Awritable.php)
+[Source](https://github.com/deployphp/deployer/blob/master/recipe/deploy/writable.php#L60)
+
+Makes writable dirs.
+
 
 
 

@@ -7,6 +7,7 @@
 [Source](/contrib/cpanel.php)
 
 
+
 ### Installing
 
 Add to your _deploy.php_
@@ -149,25 +150,30 @@ after('deploy:prepare', 'cpanel:createdb');
 ```
 
 
-* Tasks
-  * [`cpanel:createdb`](#cpanelcreatedb) — Creating database though CPanel API
-  * [`cpanel:createaddondomain`](#cpanelcreateaddondomain) — Creating addon domain though CPanel API
-  * [`cpanel:deleteaddondomain`](#cpaneldeleteaddondomain) — Delete addon domain though CPanel API
-
 
 ## Tasks
+
 ### cpanel:createdb
-[Source](https://github.com/deployphp/deployer/search?q=%22cpanel%3Acreatedb%22+in%3Afile+language%3Aphp+path%3Acontrib+filename%3Acpanel.php)
+[Source](https://github.com/deployphp/deployer/blob/master/contrib/cpanel.php#L203)
+
+Creates database though CPanel API.
+
 
 
 
 ### cpanel:createaddondomain
-[Source](https://github.com/deployphp/deployer/search?q=%22cpanel%3Acreateaddondomain%22+in%3Afile+language%3Aphp+path%3Acontrib+filename%3Acpanel.php)
+[Source](https://github.com/deployphp/deployer/blob/master/contrib/cpanel.php#L231)
+
+Creates addon domain though CPanel API.
+
 
 
 
 ### cpanel:deleteaddondomain
-[Source](https://github.com/deployphp/deployer/search?q=%22cpanel%3Adeleteaddondomain%22+in%3Afile+language%3Aphp+path%3Acontrib+filename%3Acpanel.php)
+[Source](https://github.com/deployphp/deployer/blob/master/contrib/cpanel.php#L254)
+
+Deletes addon domain though CPanel API.
+
 
 
 

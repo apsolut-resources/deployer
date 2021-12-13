@@ -9,6 +9,9 @@ namespace Deployer\Host;
 
 use Deployer\Configuration\Configuration;
 use Deployer\Deployer;
+use Deployer\Exception\ConfigurationException;
+use Deployer\Task\Context;
+use function Deployer\Support\colorize_host;
 
 class Host
 {
@@ -24,8 +27,13 @@ class Host
             $parent = Deployer::get()->config;
         }
         $this->config = new Configuration($parent);
-        $this->set('alias', $hostname);
+        $this->set('#alias', $hostname);
         $this->set('hostname', preg_replace('/\/.+$/', '', $hostname));
+    }
+
+    public function __toString(): string
+    {
+        return $this->getTag();
     }
 
     public function config(): Configuration
@@ -38,6 +46,12 @@ class Host
      */
     public function set(string $name, $value): self
     {
+        if ($name === 'alias') {
+            throw new ConfigurationException("Can not update alias of the host.\nThis will change only host own alias,\nbut not the key it is stored in HostCollection.");
+        }
+        if ($name === '#alias') {
+            $name = 'alias';
+        }
         $this->config->set($name, $value);
         return $this;
     }
@@ -53,6 +67,11 @@ class Host
         return $this->config->has($name);
     }
 
+    public function hasOwn(string $name): bool
+    {
+        return $this->config->hasOwn($name);
+    }
+
     /**
      * @param mixed|null $default
      * @return mixed|null
@@ -62,7 +81,7 @@ class Host
         return $this->config->get($name, $default);
     }
 
-    public function getAlias():? string
+    public function getAlias(): ?string
     {
         return $this->config->get('alias');
     }
@@ -73,9 +92,9 @@ class Host
         return $this;
     }
 
-    public function getTag():? string
+    public function getTag(): ?string
     {
-        return $this->config->get('tag', $this->generateTag());
+        return $this->config->get('tag', colorize_host($this->getAlias()));
     }
 
     public function setHostname(string $hostname): self
@@ -84,7 +103,7 @@ class Host
         return $this;
     }
 
-    public function getHostname():? string
+    public function getHostname(): ?string
     {
         return $this->config->get('hostname');
     }
@@ -95,7 +114,7 @@ class Host
         return $this;
     }
 
-    public function getRemoteUser():? string
+    public function getRemoteUser(): ?string
     {
         return $this->config->get('remote_user');
     }
@@ -106,7 +125,7 @@ class Host
         return $this;
     }
 
-    public function getPort():? int
+    public function getPort(): ?int
     {
         return $this->config->get('port');
     }
@@ -117,7 +136,7 @@ class Host
         return $this;
     }
 
-    public function getConfigFile():? string
+    public function getConfigFile(): ?string
     {
         return $this->config->get('config_file');
     }
@@ -128,7 +147,7 @@ class Host
         return $this;
     }
 
-    public function getIdentityFile():? string
+    public function getIdentityFile(): ?string
     {
         return $this->config->get('identity_file');
     }
@@ -139,7 +158,7 @@ class Host
         return $this;
     }
 
-    public function getForwardAgent():? bool
+    public function getForwardAgent(): ?bool
     {
         return $this->config->get('forward_agent');
     }
@@ -150,7 +169,7 @@ class Host
         return $this;
     }
 
-    public function getSshMultiplexing():? bool
+    public function getSshMultiplexing(): ?bool
     {
         return $this->config->get('ssh_multiplexing');
     }
@@ -161,7 +180,7 @@ class Host
         return $this;
     }
 
-    public function getShell():? string
+    public function getShell(): ?string
     {
         return $this->config->get('shell');
     }
@@ -172,7 +191,7 @@ class Host
         return $this;
     }
 
-    public function getDeployPath():? string
+    public function getDeployPath(): ?string
     {
         return $this->config->get('deploy_path');
     }
@@ -183,7 +202,7 @@ class Host
         return $this;
     }
 
-    public function getLabels():? array
+    public function getLabels(): ?array
     {
         return $this->config->get('labels');
     }
@@ -202,96 +221,8 @@ class Host
         return $this;
     }
 
-    public function getSshArguments():? array
+    public function getSshArguments(): ?array
     {
         return $this->config->get('ssh_arguments');
-    }
-
-    private function generateTag():? string
-    {
-        if (defined('NO_ANSI')) {
-            return $this->getAlias();
-        }
-
-        if (in_array($this->getAlias(), ['localhost', 'local'])) {
-            return $this->getAlias();
-        }
-
-        if (getenv('COLORTERM') === 'truecolor') {
-            $hsv = function ($h, $s, $v) {
-                $r = $g = $b = $i = $f = $p = $q = $t = 0;
-                $i = floor($h * 6);
-                $f = $h * 6 - $i;
-                $p = $v * (1 - $s);
-                $q = $v * (1 - $f * $s);
-                $t = $v * (1 - (1 - $f) * $s);
-                switch ($i % 6) {
-                    case 0:
-                        $r = $v;
-                        $g = $t;
-                        $b = $p;
-                        break;
-                    case 1:
-                        $r = $q;
-                        $g = $v;
-                        $b = $p;
-                        break;
-                    case 2:
-                        $r = $p;
-                        $g = $v;
-                        $b = $t;
-                        break;
-                    case 3:
-                        $r = $p;
-                        $g = $q;
-                        $b = $v;
-                        break;
-                    case 4:
-                        $r = $t;
-                        $g = $p;
-                        $b = $v;
-                        break;
-                    case 5:
-                        $r = $v;
-                        $g = $p;
-                        $b = $q;
-                        break;
-                }
-                $r = round($r * 255);
-                $g = round($g * 255);
-                $b = round($b * 255);
-                return "\x1b[38;2;{$r};{$g};{$b}m";
-            };
-
-            $total = 100;
-            $colors = [];
-            for ($i = 0; $i < $total; $i++) {
-                $colors[] = $hsv($i / $total, 1, .9);
-            }
-
-            $alias = $this->getAlias();
-            $tag = $colors[abs(crc32($alias)) % count($colors)];
-
-            return "{$tag}{$alias}\x1b[0m";
-        }
-
-
-        $colors = [
-            'fg=cyan;options=bold',
-            'fg=green;options=bold',
-            'fg=yellow;options=bold',
-            'fg=cyan',
-            'fg=blue',
-            'fg=yellow',
-            'fg=magenta',
-            'fg=blue;options=bold',
-            'fg=green',
-            'fg=magenta;options=bold',
-            'fg=red;options=bold',
-        ];
-        $alias = $this->getAlias();
-        $tag = $colors[abs(crc32($alias)) % count($colors)];
-
-        return "<{$tag}>{$alias}</>";
     }
 }

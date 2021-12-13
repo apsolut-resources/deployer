@@ -6,59 +6,78 @@
 
 [Source](/recipe/flow_framework.php)
 
+* Requires
+  * [common](/docs/recipe/common.md)
 
-
-* Require
-  * [`recipe/common.php`](/docs/recipe/common.md)
-* Config
-  * [`flow_context`](#flow_context)
-  * [`flow_command`](#flow_command)
-  * [`shared_dirs`](#shared_dirs)
-* Tasks
-  * [`deploy:run_migrations`](#deployrun_migrations) — Apply database migrations
-  * [`deploy:publish_resources`](#deploypublish_resources) — Publish resources
-  * [`deploy`](#deploy) — Deploy your project
-
-## Config
+## Configuration
 ### flow_context
-[Source](https://github.com/deployphp/deployer/search?q=%22flow_context%22+in%3Afile+language%3Aphp+path%3Arecipe+filename%3Aflow_framework.php)
+[Source](https://github.com/deployphp/deployer/blob/master/recipe/flow_framework.php#L9)
 
 Flow-Framework application-context
 
+```php title="Default value"
+'Production'
+```
+
+
 ### flow_command
-[Source](https://github.com/deployphp/deployer/search?q=%22flow_command%22+in%3Afile+language%3Aphp+path%3Arecipe+filename%3Aflow_framework.php)
+[Source](https://github.com/deployphp/deployer/blob/master/recipe/flow_framework.php#L12)
 
 Flow-Framework cli-command
 
-### shared_dirs
-[Source](https://github.com/deployphp/deployer/search?q=%22shared_dirs%22+in%3Afile+language%3Aphp+path%3Arecipe+filename%3Aflow_framework.php)
+```php title="Default value"
+'flow'
+```
 
-* Overrides [`shared_dirs`](/docs/recipe/common.md#shared_dirs) from `recipe/common.php`
+
+### shared_dirs
+[Source](https://github.com/deployphp/deployer/blob/master/recipe/flow_framework.php#L15)
+
+Overrides [shared_dirs](/docs/recipe/deploy/shared.md#shared_dirs) from `recipe/deploy/shared.php`.
 
 Flow-Framework shared directories
 
+```php title="Default value"
+[
+    'Data/Persistent',
+    'Data/Logs',
+    'Configuration/{{flow_context}}'
+]
+```
+
+
 
 ## Tasks
+
 ### deploy:run_migrations
-[Source](https://github.com/deployphp/deployer/search?q=%22deploy%3Arun_migrations%22+in%3Afile+language%3Aphp+path%3Arecipe+filename%3Aflow_framework.php)
+[Source](https://github.com/deployphp/deployer/blob/master/recipe/flow_framework.php#L25)
+
+Applies database migrations.
 
 Apply database migrations
 
+
 ### deploy:publish_resources
-[Source](https://github.com/deployphp/deployer/search?q=%22deploy%3Apublish_resources%22+in%3Afile+language%3Aphp+path%3Arecipe+filename%3Aflow_framework.php)
+[Source](https://github.com/deployphp/deployer/blob/master/recipe/flow_framework.php#L33)
+
+Publishes resources.
 
 Publish resources
 
+
 ### deploy
-[Source](https://github.com/deployphp/deployer/search?q=%22deploy%22+in%3Afile+language%3Aphp+path%3Arecipe+filename%3Aflow_framework.php)
+[Source](https://github.com/deployphp/deployer/blob/master/recipe/flow_framework.php#L41)
+
+Deploys your project.
 
 Main task
 
+
 This task is group task which contains next tasks:
-* [`deploy:prepare`](/docs/recipe/common.md#deployprepare)
-* [`deploy:vendors`](/docs/recipe/deploy/vendors.md#deployvendors)
-* [`deploy:run_migrations`](/docs/recipe/flow_framework.md#deployrun_migrations)
-* [`deploy:publish_resources`](/docs/recipe/flow_framework.md#deploypublish_resources)
-* [`deploy:publish`](/docs/recipe/common.md#deploypublish)
+* [deploy:prepare](/docs/recipe/common.md#deployprepare)
+* [deploy:vendors](/docs/recipe/deploy/vendors.md#deployvendors)
+* [deploy:run_migrations](/docs/recipe/flow_framework.md#deployrun_migrations)
+* [deploy:publish_resources](/docs/recipe/flow_framework.md#deploypublish_resources)
+* [deploy:publish](/docs/recipe/common.md#deploypublish)
 
 

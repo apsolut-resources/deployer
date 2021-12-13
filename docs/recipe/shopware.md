@@ -6,142 +6,208 @@
 
 [Source](/recipe/shopware.php)
 
+* Requires
+  * [common](/docs/recipe/common.md)
 
 
-* Config
-  * [`repository`](#repository)
-  * [`release_name`](#release_name)
-  * [`shared_files`](#shared_files)
-  * [`shared_dirs`](#shared_dirs)
-  * [`writable_dirs`](#writable_dirs)
-  * [`static_folders`](#static_folders)
-* Tasks
-  * [`sw:update_code`](#swupdate_code)
-  * [`sw:system:install`](#swsysteminstall)
-  * [`sw:build`](#swbuild)
-  * [`sw:system:setup`](#swsystemsetup)
-  * [`sw:theme:compile`](#swthemecompile)
-  * [`sw:cache:clear`](#swcacheclear)
-  * [`sw:cache:warmup`](#swcachewarmup)
-  * [`sw:database:migrate`](#swdatabasemigrate)
-  * [`sw:plugin:refresh`](#swpluginrefresh)
-  * [`sw:plugin:activate:all`](#swpluginactivateall)
-  * [`sw:plugin:migrate:all`](#swpluginmigrateall)
-  * [`sw:deploy`](#swdeploy)
-  * [`deploy`](#deploy) — Deploy your project
+## Usage
 
-## Config
-### repository
-[Source](https://github.com/deployphp/deployer/search?q=%22repository%22+in%3Afile+language%3Aphp+path%3Arecipe+filename%3Ashopware.php)
+Add {{repository}} to your _deploy.php_ file:
+
+```php
+set('repository', 'git@github.com:shopware/production.git');
+```
+
+:::note
+Please remember that the installation must be modified so that it can be
+[build without database](https://developer.shopware.com/docs/guides/hosting/installation-updates/deployments/build-w-o-db#compiling-the-storefront-without-database).
+:::
 
 
+## Configuration
+### default_timeout
+[Source](https://github.com/deployphp/deployer/blob/master/recipe/shopware.php#L23)
 
-### release_name
-[Source](https://github.com/deployphp/deployer/search?q=%22release_name%22+in%3Afile+language%3Aphp+path%3Arecipe+filename%3Ashopware.php)
+Overrides [default_timeout](/docs/recipe/common.md#default_timeout) from `recipe/common.php`.
+
+
 
 
 
 ### shared_files
-[Source](https://github.com/deployphp/deployer/search?q=%22shared_files%22+in%3Afile+language%3Aphp+path%3Arecipe+filename%3Ashopware.php)
+[Source](https://github.com/deployphp/deployer/blob/master/recipe/shopware.php#L26)
 
+Overrides [shared_files](/docs/recipe/deploy/shared.md#shared_files) from `recipe/deploy/shared.php`.
+
+These files are shared among all releases.
+
+```php title="Default value"
+[
+    '.env',
+    'install.lock',
+    'public/.htaccess',
+    'public/.user.ini',
+]
+```
 
 
 ### shared_dirs
-[Source](https://github.com/deployphp/deployer/search?q=%22shared_dirs%22+in%3Afile+language%3Aphp+path%3Arecipe+filename%3Ashopware.php)
+[Source](https://github.com/deployphp/deployer/blob/master/recipe/shopware.php#L34)
 
+Overrides [shared_dirs](/docs/recipe/deploy/shared.md#shared_dirs) from `recipe/deploy/shared.php`.
+
+These directories are shared among all releases.
+
+```php title="Default value"
+[
+    'config/jwt',
+    'files',
+    'var/log',
+    'public/media',
+    'public/thumbnail',
+    'public/sitemap',
+]
+```
 
 
 ### writable_dirs
-[Source](https://github.com/deployphp/deployer/search?q=%22writable_dirs%22+in%3Afile+language%3Aphp+path%3Arecipe+filename%3Ashopware.php)
+[Source](https://github.com/deployphp/deployer/blob/master/recipe/shopware.php#L45)
 
+Overrides [writable_dirs](/docs/recipe/deploy/writable.md#writable_dirs) from `recipe/deploy/writable.php`.
 
+These directories are made writable (the definition of "writable" requires attention).
+Please note that the files in `config/jwt/*` receive special attention in the `sw:writable:jwt` task.
 
-### static_folders
-[Source](https://github.com/deployphp/deployer/search?q=%22static_folders%22+in%3Afile+language%3Aphp+path%3Arecipe+filename%3Ashopware.php)
-
+```php title="Default value"
+[
+    'config/jwt',
+    'custom/plugins',
+    'files',
+    'press_files',
+    'public/bundles',
+    'public/css',
+    'public/fonts',
+    'public/js',
+    'public/media',
+    'public/sitemap',
+    'public/theme',
+    'public/thumbnail',
+    'var',
+]
+```
 
 
 
 ## Tasks
-### sw:update_code
-[Source](https://github.com/deployphp/deployer/search?q=%22sw%3Aupdate_code%22+in%3Afile+language%3Aphp+path%3Arecipe+filename%3Ashopware.php)
-
-
-
-### sw:system:install
-[Source](https://github.com/deployphp/deployer/search?q=%22sw%3Asystem%3Ainstall%22+in%3Afile+language%3Aphp+path%3Arecipe+filename%3Ashopware.php)
-
-
-
-### sw:build
-[Source](https://github.com/deployphp/deployer/search?q=%22sw%3Abuild%22+in%3Afile+language%3Aphp+path%3Arecipe+filename%3Ashopware.php)
-
-
-
-### sw:system:setup
-[Source](https://github.com/deployphp/deployer/search?q=%22sw%3Asystem%3Asetup%22+in%3Afile+language%3Aphp+path%3Arecipe+filename%3Ashopware.php)
-
-
-
-### sw:theme:compile
-[Source](https://github.com/deployphp/deployer/search?q=%22sw%3Atheme%3Acompile%22+in%3Afile+language%3Aphp+path%3Arecipe+filename%3Ashopware.php)
-
-
 
 ### sw:cache:clear
-[Source](https://github.com/deployphp/deployer/search?q=%22sw%3Acache%3Aclear%22+in%3Afile+language%3Aphp+path%3Arecipe+filename%3Ashopware.php)
+[Source](https://github.com/deployphp/deployer/blob/master/recipe/shopware.php#L62)
 
+
+
+This task remotely executes the `cache:clear` console command on the target server.
 
 
 ### sw:cache:warmup
-[Source](https://github.com/deployphp/deployer/search?q=%22sw%3Acache%3Awarmup%22+in%3Afile+language%3Aphp+path%3Arecipe+filename%3Ashopware.php)
+[Source](https://github.com/deployphp/deployer/blob/master/recipe/shopware.php#L68)
 
+
+
+This task remotely executes the cache warmup console commands on the target server, so that the first user, who
+visits the website, doesn't have to wait for the cache to be built up.
 
 
 ### sw:database:migrate
-[Source](https://github.com/deployphp/deployer/search?q=%22sw%3Adatabase%3Amigrate%22+in%3Afile+language%3Aphp+path%3Arecipe+filename%3Ashopware.php)
+[Source](https://github.com/deployphp/deployer/blob/master/recipe/shopware.php#L74)
 
+
+
+This task remotely executes the `database:migrate` console command on the target server.
 
 
 ### sw:plugin:refresh
-[Source](https://github.com/deployphp/deployer/search?q=%22sw%3Aplugin%3Arefresh%22+in%3Afile+language%3Aphp+path%3Arecipe+filename%3Ashopware.php)
+[Source](https://github.com/deployphp/deployer/blob/master/recipe/shopware.php#L78)
 
 
 
-### sw:plugin:activate:all
-[Source](https://github.com/deployphp/deployer/search?q=%22sw%3Aplugin%3Aactivate%3Aall%22+in%3Afile+language%3Aphp+path%3Arecipe+filename%3Ashopware.php)
 
 
 
-### sw:plugin:migrate:all
-[Source](https://github.com/deployphp/deployer/search?q=%22sw%3Aplugin%3Amigrate%3Aall%22+in%3Afile+language%3Aphp+path%3Arecipe+filename%3Ashopware.php)
+### sw:plugin:update:all
+[Source](https://github.com/deployphp/deployer/blob/master/recipe/shopware.php#L114)
+
+
+
+
+
+
+### sw:writable:jwt
+[Source](https://github.com/deployphp/deployer/blob/master/recipe/shopware.php#L124)
+
+
+
 
 
 
 ### sw:deploy
-[Source](https://github.com/deployphp/deployer/search?q=%22sw%3Adeploy%22+in%3Afile+language%3Aphp+path%3Arecipe+filename%3Ashopware.php)
+[Source](https://github.com/deployphp/deployer/blob/master/recipe/shopware.php#L131)
 
-Grouped SW deploy tasks
+
+
+Grouped SW deploy tasks.
+
 
 This task is group task which contains next tasks:
-* [`sw:build`](/docs/recipe/shopware.md#swbuild)
-* [`sw:plugin:activate:all`](/docs/recipe/shopware.md#swpluginactivateall)
-* [`sw:database:migrate`](/docs/recipe/shopware.md#swdatabasemigrate)
-* [`sw:plugin:migrate:all`](/docs/recipe/shopware.md#swpluginmigrateall)
-* [`sw:theme:compile`](/docs/recipe/shopware.md#swthemecompile)
-* [`sw:cache:clear`](/docs/recipe/shopware.md#swcacheclear)
+* [sw:database:migrate](/docs/recipe/shopware.md#swdatabasemigrate)
+* [sw:plugin:refresh](/docs/recipe/shopware.md#swpluginrefresh)
+* [sw:cache:clear](/docs/recipe/shopware.md#swcacheclear)
+* [sw:plugin:update:all](/docs/recipe/shopware.md#swpluginupdateall)
+* [sw:cache:clear](/docs/recipe/shopware.md#swcacheclear)
 
 
 ### deploy
-[Source](https://github.com/deployphp/deployer/search?q=%22deploy%22+in%3Afile+language%3Aphp+path%3Arecipe+filename%3Ashopware.php)
+[Source](https://github.com/deployphp/deployer/blob/master/recipe/shopware.php#L140)
 
-Main task
+Deploys your project.
+
+
+
 
 This task is group task which contains next tasks:
-* [`deploy:prepare`](/docs/recipe/common.md#deployprepare)
-* [`sw:deploy`](/docs/recipe/shopware.md#swdeploy)
-* [`deploy:clear_paths`](/docs/recipe/deploy/clear_paths.md#deployclear_paths)
-* [`sw:cache:warmup`](/docs/recipe/shopware.md#swcachewarmup)
-* [`deploy:publish`](/docs/recipe/common.md#deploypublish)
+* [deploy:prepare](/docs/recipe/common.md#deployprepare)
+* [sw:deploy](/docs/recipe/shopware.md#swdeploy)
+* [deploy:clear_paths](/docs/recipe/deploy/clear_paths.md#deployclear_paths)
+* [sw:cache:warmup](/docs/recipe/shopware.md#swcachewarmup)
+* [sw:writable:jwt](/docs/recipe/shopware.md#swwritablejwt)
+* [deploy:publish](/docs/recipe/common.md#deploypublish)
+
+
+### sw-build-without-db:get-remote-config
+[Source](https://github.com/deployphp/deployer/blob/master/recipe/shopware.php#L150)
+
+
+
+
+
+
+### sw-build-without-db:build
+[Source](https://github.com/deployphp/deployer/blob/master/recipe/shopware.php#L167)
+
+
+
+
+
+
+### sw-build-without-db
+[Source](https://github.com/deployphp/deployer/blob/master/recipe/shopware.php#L171)
+
+
+
+
+
+
+This task is group task which contains next tasks:
+* [sw-build-without-db:get-remote-config](/docs/recipe/shopware.md#sw-build-without-dbget-remote-config)
+* [sw-build-without-db:build](/docs/recipe/shopware.md#sw-build-without-dbbuild)
 
 

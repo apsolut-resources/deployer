@@ -9,7 +9,6 @@ namespace Deployer\Configuration;
 
 use Deployer\Exception\ConfigurationException;
 use Deployer\Utility\Httpie;
-use function Deployer\get;
 use function Deployer\Support\array_merge_alternate;
 use function Deployer\Support\is_closure;
 use function Deployer\Support\normalize_line_endings;
@@ -26,7 +25,7 @@ class Configuration implements \ArrayAccess
 
     public function update(array $values): void
     {
-        $this->values = $values;
+        $this->values = array_merge($this->values, $values);
     }
 
     public function bind(Configuration $parent): void
@@ -52,6 +51,11 @@ class Configuration implements \ArrayAccess
             return $this->parent->has($name);
         }
         return false;
+    }
+
+    public function hasOwn(string $name): bool
+    {
+        return array_key_exists($name, $this->values);
     }
 
     public function add(string $name, array $array): void
@@ -92,7 +96,7 @@ class Configuration implements \ArrayAccess
             }
         }
 
-        if ($default !== null) {
+        if (func_num_args() >= 2) {
             return $this->parse($default);
         }
 
@@ -102,7 +106,7 @@ class Configuration implements \ArrayAccess
     /**
      * @return mixed|null
      */
-    protected function fetch(string $name)
+    public function fetch(string $name)
     {
         if (array_key_exists($name, $this->values)) {
             return $this->values[$name];
@@ -132,6 +136,11 @@ class Configuration implements \ArrayAccess
         return $this->values;
     }
 
+    public function keys(): array
+    {
+        return array_keys($this->values);
+    }
+
     /**
      * @param array $matches
      * @return mixed|null
@@ -145,6 +154,7 @@ class Configuration implements \ArrayAccess
      * @param mixed $offset
      * @return bool
      */
+    #[\ReturnTypeWillChange]
     public function offsetExists($offset)
     {
         return $this->has($offset);
@@ -155,6 +165,7 @@ class Configuration implements \ArrayAccess
      * @return mixed|null
      * @phpcsSuppress SlevomatCodingStandard.TypeHints.ParameterTypeHint.MissingNativeTypeHint
      */
+    #[\ReturnTypeWillChange]
     public function offsetGet($offset)
     {
         return $this->get($offset);
@@ -165,6 +176,7 @@ class Configuration implements \ArrayAccess
      * @param mixed $value
      * @phpcsSuppress SlevomatCodingStandard.TypeHints.ParameterTypeHint.MissingNativeTypeHint
      */
+    #[\ReturnTypeWillChange]
     public function offsetSet($offset, $value): void
     {
         $this->set($offset, $value);
@@ -173,6 +185,7 @@ class Configuration implements \ArrayAccess
     /**
      * @param mixed $offset
      */
+    #[\ReturnTypeWillChange]
     public function offsetUnset($offset): void
     {
         unset($this->values[$offset]);
@@ -185,7 +198,7 @@ class Configuration implements \ArrayAccess
         }
 
         $values = Httpie::get($this->get('master_url') . '/load')
-            ->body([
+            ->jsonBody([
                 'host' => $this->get('alias'),
             ])
             ->getJson();
@@ -199,7 +212,7 @@ class Configuration implements \ArrayAccess
         }
 
         Httpie::get($this->get('master_url') . '/save')
-            ->body([
+            ->jsonBody([
                 'host' => $this->get('alias'),
                 'config' => $this->persist(),
             ])
@@ -209,9 +222,6 @@ class Configuration implements \ArrayAccess
     public function persist(): array
     {
         $values = [];
-        if ($this->parent !== null) {
-            $values = $this->parent->persist();
-        }
         foreach ($this->values as $key => $value) {
             if (is_closure($value)) {
                 continue;

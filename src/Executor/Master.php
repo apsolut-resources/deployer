@@ -8,43 +8,63 @@
 namespace Deployer\Executor;
 
 use Deployer\Component\Ssh\Client;
-use Deployer\Configuration\Configuration;
+use Deployer\Component\Ssh\IOArguments;
 use Deployer\Deployer;
-use Deployer\Exception\ConnectException;
-use Deployer\Exception\Exception;
 use Deployer\Host\Host;
 use Deployer\Host\Localhost;
 use Deployer\Selector\Selector;
-use Deployer\Support\Stringify;
 use Deployer\Task\Task;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
+use Symfony\Component\Process\PhpExecutableFinder;
 use Symfony\Component\Process\Process;
 
 const FRAMES = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏'];
 
 function spinner(string $message = ''): string
 {
-    $frame = FRAMES[((new \DateTime)->format('u') / 1e5) % count(FRAMES)];
+    $frame = FRAMES[(int) ((new \DateTime)->format('u') / 1e5) % count(FRAMES)];
     return "  $frame $message\r";
 }
 
 class Master
 {
+    /**
+     * @var InputInterface
+     */
     private $input;
+
+    /**
+     * @var OutputInterface
+     */
     private $output;
+
+    /**
+     * @var Server
+     */
     private $server;
+
+    /**
+     * @var Messenger
+     */
     private $messenger;
+
+    /**
+     * @var Client
+     */
     private $client;
-    private $config;
+
+    /**
+     * @var false|string
+     */
+    private $phpBin;
 
     public function __construct(
-        InputInterface $input,
+        InputInterface  $input,
         OutputInterface $output,
-        Server $server,
-        Messenger $messenger,
-        Client $client,
-        Configuration $config
+        Server          $server,
+        Messenger       $messenger,
+        Client          $client
     )
     {
         $this->input = $input;
@@ -52,7 +72,7 @@ class Master
         $this->server = $server;
         $this->messenger = $messenger;
         $this->client = $client;
-        $this->config = $config;
+        $this->phpBin = (new PhpExecutableFinder())->find();
     }
 
     /**
@@ -64,7 +84,9 @@ class Master
         $globalLimit = (int)$this->input->getOption('limit') ?: count($hosts);
 
         foreach ($tasks as $task) {
-            $plan || $this->messenger->startTask($task);
+            if (!$plan) {
+                $this->messenger->startTask($task);
+            }
 
             $plannedHosts = $hosts;
 
@@ -78,11 +100,21 @@ class Master
                         break;
                     }
                 }
-            }
-
-            if ($task->isLocal()) {
-                // Special name for local() tasks.
-                $plannedHosts = [new Localhost('local')];
+            } else if ($task->isOncePerNode()) {
+                $plannedHosts = [];
+                foreach ($hosts as $currentHost) {
+                    if (Selector::apply($task->getSelector(), $currentHost)) {
+                        $nodeLabel = $currentHost->getHostname();
+                        $labels = $currentHost->config()->get('labels', []);
+                        if (is_array($labels) && array_key_exists('node', $labels)) {
+                            $nodeLabel = $labels['node'];
+                        }
+                        if (array_key_exists($nodeLabel, $plannedHosts)) {
+                            continue;
+                        }
+                        $plannedHosts[$nodeLabel] = $currentHost;
+                    }
+                }
             }
 
             if ($limit === 1 || count($plannedHosts) === 1) {
@@ -105,7 +137,7 @@ class Master
                     }
                 }
             } else {
-                foreach (array_chunk($hosts, $limit) as $chunk) {
+                foreach (array_chunk($plannedHosts, $limit) as $chunk) {
                     $selectedHosts = [];
                     foreach ($chunk as $currentHost) {
                         if (Selector::apply($task->getSelector(), $currentHost)) {
@@ -138,36 +170,21 @@ class Master
      */
     public function connect(array $hosts): void
     {
-        $callback = function (string $output) {
-            $output = preg_replace('/\n$/', '', $output);
-            if (strlen($output) !== 0) {
-                $this->output->writeln($output);
-            }
-        };
-
-        // Connect to each host sequentially, to prevent getting locked.
+        // Connect to each host sequentially, to allow user type yes if fingerprint is missing.
         foreach ($hosts as $host) {
             if ($host instanceof Localhost) {
                 continue;
             }
-            $process = $this->createConnectProcess($host);
-            $process->start();
-
-            while ($process->isRunning()) {
-                $this->gatherOutput([$process], $callback);
-                if ($this->output->isDecorated()) {
-                    $this->output->write(spinner("connect {$host->getTag()}"));
-                }
-                usleep(1000);
+            if ($this->output->isDecorated() && !getenv('CI')) {
+                $this->output->write("  connecting $host\r");
+            } else {
+                $this->output->writeln("connecting $host");
             }
-
-            if ($process->getExitCode() !== 0) {
-                throw new ConnectException($process->getOutput());
+            $this->client->connect($host);
+            if ($this->output->isDecorated() && !getenv('CI')) {
+                $this->output->write(str_repeat(' ', intval(getenv('COLUMNS')) - 1) . "\r");
             }
         }
-
-        // Clear spinner.
-        $this->output->write(str_repeat(' ', intval(getenv('COLUMNS')) - 1) . "\r");
     }
 
     /**
@@ -201,7 +218,7 @@ class Master
         /** @var Process[] $processes */
         $processes = [];
 
-        $this->server->addTimer(0, function () use (&$processes, $hosts, $task) {
+        $this->server->loop->futureTick(function () use (&$processes, $hosts, $task) {
             foreach ($hosts as $host) {
                 $processes[] = $this->createProcess($host, $task);
             }
@@ -211,20 +228,22 @@ class Master
             }
         });
 
-        $this->server->addPeriodicTimer(0.03, function ($timer) use (&$processes, $callback) {
+        $this->server->loop->addPeriodicTimer(0.03, function ($timer) use (&$processes, $callback) {
             $this->gatherOutput($processes, $callback);
-            if ($this->output->isDecorated()) {
+            if ($this->output->isDecorated() && !getenv('CI')) {
                 $this->output->write(spinner());
             }
             if ($this->allFinished($processes)) {
-                $this->server->stop();
-                $this->server->cancelTimer($timer);
+                $this->server->loop->stop();
+                $this->server->loop->cancelTimer($timer);
             }
         });
 
-        $this->server->run();
+        $this->server->loop->run();
 
-        $this->output->write("    \r"); // clear spinner
+        if ($this->output->isDecorated() && !getenv('CI')) {
+            $this->output->write("    \r"); // clear spinner
+        }
         $this->gatherOutput($processes, $callback);
 
         return $this->cumulativeExitCode($processes);
@@ -232,31 +251,20 @@ class Master
 
     protected function createProcess(Host $host, Task $task): Process
     {
-        $dep = PHP_BINARY . ' ' . DEPLOYER_BIN;
-        $options = Stringify::options($this->input, $this->output);
+        $command = [
+            $this->phpBin, DEPLOYER_BIN,
+            'worker', '--port', $this->server->getPort(),
+            '--task', $task,
+            '--host', $host->getAlias(),
+        ];
+        $command = array_merge($command, IOArguments::collect($this->input, $this->output));
         if ($task->isVerbose() && $this->output->getVerbosity() === OutputInterface::VERBOSITY_NORMAL) {
-            $options .= ' -v';
+            $command[] = '-v';
         }
-        $command = "$dep worker --task $task --host {$host->getAlias()} --port {$this->server->getPort()} {$options}";
-
         if ($this->output->isDebug()) {
-            $this->output->writeln("[{$host->getTag()}] $command");
+            $this->output->writeln("[$host] " . join(' ', $command));
         }
-
-        return Process::fromShellCommandline($command);
-    }
-
-    protected function createConnectProcess(Host $host): Process
-    {
-        $dep = PHP_BINARY . ' ' . DEPLOYER_BIN;
-        $options = Stringify::options($this->input, $this->output);
-        $command = "$dep connect --host {$host->getAlias()} {$options}";
-
-        if ($this->output->isDebug()) {
-            $this->output->writeln("[{$host->getTag()}] $command");
-        }
-
-        return Process::fromShellCommandline($command);
+        return new Process($command);
     }
 
     /**
@@ -301,23 +309,5 @@ class Master
             }
         }
         return 0;
-    }
-
-    private static function stringifyVerbosity(int $verbosity): string
-    {
-        switch ($verbosity) {
-            case OutputInterface::VERBOSITY_QUIET:
-                return '-q';
-            case OutputInterface::VERBOSITY_NORMAL:
-                return '';
-            case OutputInterface::VERBOSITY_VERBOSE:
-                return '-v';
-            case OutputInterface::VERBOSITY_VERY_VERBOSE:
-                return '-vv';
-            case OutputInterface::VERBOSITY_DEBUG:
-                return '-vvv';
-            default:
-                throw new Exception('Unknown verbosity level: ' . $verbosity);
-        }
     }
 }

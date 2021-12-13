@@ -95,7 +95,7 @@ set('mattermost_text', '_{{user}}_ deploying `{{branch}}` to **{{target}}**');
 set('mattermost_success_text', 'Deploy to **{{target}}** successful {{mattermost_success_emoji}}');
 set('mattermost_failure_text', 'Deploy to **{{target}}** failed {{mattermost_failure_emoji}}');
 
-desc('Notify mattermost');
+desc('Notifies mattermost');
 task('mattermost:notify', function() {
     if (null === get('mattermost_webhook')) {
         return;
@@ -113,10 +113,10 @@ task('mattermost:notify', function() {
         $body['icon_url'] = get('mattermost_icon_url');
     }
 
-    Httpie::post(get('mattermost_webhook'))->body($body)->send();
+    Httpie::post(get('mattermost_webhook'))->jsonBody($body)->send();
 });
 
-desc('Notifying mattermost about deploy finish');
+desc('Notifies mattermost about deploy finish');
 task('mattermost:notify:success', function() {
     if (null === get('mattermost_webhook')) {
         return;
@@ -134,10 +134,10 @@ task('mattermost:notify:success', function() {
         $body['icon_url'] = get('mattermost_icon_url');
     }
 
-    Httpie::post(get('mattermost_webhook'))->body($body)->send();
+    Httpie::post(get('mattermost_webhook'))->jsonBody($body)->send();
 });
 
-desc('Notifying mattermost about deploy failure');
+desc('Notifies mattermost about deploy failure');
 task('mattermost:notify:failure', function() {
     if (null === get('mattermost_webhook')) {
         return;
@@ -155,5 +155,5 @@ task('mattermost:notify:failure', function() {
         $body['icon_url'] = get('mattermost_icon_url');
     }
 
-    Httpie::post(get('mattermost_webhook'))->body($body)->send();
+    Httpie::post(get('mattermost_webhook'))->jsonBody($body)->send();
 });

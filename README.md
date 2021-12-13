@@ -10,26 +10,13 @@
 
 See [deployer.org](https://deployer.org) for more information and documentation.
 
-## Contributing
+## Features
 
-Do you want to contribute to this project? Start working on one of those:
+- Automatic server **provisioning**.
+- **Zero downtime** deployments.
+- Ready to use recipes for **most frameworks**.
 
-- Improve docs of [recipes](recipe) or [contrib](contrib) 
-- Fix one of the [bugs](http://bit.ly/deployer-bugs)
-- Add new features!
-
-## Maintainer
-* Anton Medvedev [@antonmedv](https://github.com/antonmedv)
-
-See also the list of [contributors](https://github.com/deployphp/deployer/graphs/contributors) who participated in this project.
-
-## Sponsorship
-
-* Daniel Knoch
-
-See a full [list of sponsors](https://github.com/deployphp/deployer/blob/master/SPONSORS.md).
-
-## Related
+## Additional resources
 
 * [GitHub Action for Deployer](https://github.com/deployphp/action)
 

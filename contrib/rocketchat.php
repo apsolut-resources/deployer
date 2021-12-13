@@ -87,7 +87,7 @@ set('rocketchat_text', '_{{user}}_ deploying `{{branch}}` to *{{target}}*');
 set('rocketchat_success_text', 'Deploy to *{{target}}* successful');
 set('rocketchat_failure_text', 'Deploy to *{{target}}* failed');
 
-desc('Notify RocketChat');
+desc('Notifies RocketChat');
 task('rocketchat:notify', function() {
     if (null === get('rocketchat_webhook')) {
         return;
@@ -114,10 +114,10 @@ task('rocketchat:notify', function() {
         $body['emoji'] = get('rocketchat_icon_emoji');
     }
 
-    Httpie::post(get('rocketchat_webhook'))->body($body)->send();
+    Httpie::post(get('rocketchat_webhook'))->jsonBody($body)->send();
 });
 
-desc('Notifying RocketChat about deploy finish');
+desc('Notifies RocketChat about deploy finish');
 task('rocketchat:notify:success', function() {
     if (null === get('rocketchat_webhook')) {
         return;
@@ -144,10 +144,10 @@ task('rocketchat:notify:success', function() {
         $body['emoji'] = get('rocketchat_icon_emoji');
     }
 
-    Httpie::post(get('rocketchat_webhook'))->body($body)->send();
+    Httpie::post(get('rocketchat_webhook'))->jsonBody($body)->send();
 });
 
-desc('Notifying RocketChat about deploy failure');
+desc('Notifies RocketChat about deploy failure');
 task('rocketchat:notify:failure', function() {
     if (null === get('rocketchat_webhook')) {
         return;
@@ -174,6 +174,6 @@ task('rocketchat:notify:failure', function() {
         $body['emoji'] = get('rocketchat_icon_emoji');
     }
 
-    Httpie::post(get('rocketchat_webhook'))->body($body)->send();
+    Httpie::post(get('rocketchat_webhook'))->jsonBody($body)->send();
 });
 

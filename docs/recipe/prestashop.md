@@ -6,49 +6,85 @@
 
 [Source](/recipe/prestashop.php)
 
+* Requires
+  * [common](/docs/recipe/common.md)
 
-
-* Require
-  * [`recipe/common.php`](/docs/recipe/common.md)
-* Config
-  * [`shared_files`](#shared_files)
-  * [`shared_dirs`](#shared_dirs)
-  * [`writable_dirs`](#writable_dirs)
-* Tasks
-  * [`deploy`](#deploy) — Deploy your project
-
-## Config
+## Configuration
 ### shared_files
-[Source](https://github.com/deployphp/deployer/search?q=%22shared_files%22+in%3Afile+language%3Aphp+path%3Arecipe+filename%3Aprestashop.php)
+[Source](https://github.com/deployphp/deployer/blob/master/recipe/prestashop.php#L8)
 
-* Overrides [`shared_files`](/docs/recipe/common.md#shared_files) from `recipe/common.php`
+Overrides [shared_files](/docs/recipe/deploy/shared.md#shared_files) from `recipe/deploy/shared.php`.
 
+
+
+```php title="Default value"
+[
+    'config/settings.inc.php',
+    '.htaccess',
+]
+```
 
 
 ### shared_dirs
-[Source](https://github.com/deployphp/deployer/search?q=%22shared_dirs%22+in%3Afile+language%3Aphp+path%3Arecipe+filename%3Aprestashop.php)
+[Source](https://github.com/deployphp/deployer/blob/master/recipe/prestashop.php#L12)
 
-* Overrides [`shared_dirs`](/docs/recipe/common.md#shared_dirs) from `recipe/common.php`
+Overrides [shared_dirs](/docs/recipe/deploy/shared.md#shared_dirs) from `recipe/deploy/shared.php`.
 
+
+
+```php title="Default value"
+[
+    'img',
+    'log',
+    'download',
+    'upload',
+    'translations',
+    'mails',
+    'themes/default-bootstrap/lang',
+    'themes/default-bootstrap/mails',
+    'themes/default-bootstrap/pdf/lang',
+]
+```
 
 
 ### writable_dirs
-[Source](https://github.com/deployphp/deployer/search?q=%22writable_dirs%22+in%3Afile+language%3Aphp+path%3Arecipe+filename%3Aprestashop.php)
+[Source](https://github.com/deployphp/deployer/blob/master/recipe/prestashop.php#L23)
 
-* Overrides [`writable_dirs`](/docs/recipe/deploy/writable.md#writable_dirs) from `recipe/deploy/writable.php`
+Overrides [writable_dirs](/docs/recipe/deploy/writable.md#writable_dirs) from `recipe/deploy/writable.php`.
 
+
+
+```php title="Default value"
+[
+    'img',
+    'log',
+    'cache',
+    'download',
+    'upload',
+    'translations',
+    'mails',
+    'themes/default-bootstrap/lang',
+    'themes/default-bootstrap/mails',
+    'themes/default-bootstrap/pdf/lang',
+    'themes/default-bootstrap/cache',
+]
+```
 
 
 
 ## Tasks
+
 ### deploy
-[Source](https://github.com/deployphp/deployer/search?q=%22deploy%22+in%3Afile+language%3Aphp+path%3Arecipe+filename%3Aprestashop.php)
+[Source](https://github.com/deployphp/deployer/blob/master/recipe/prestashop.php#L38)
+
+Deploys your project.
+
 
 
 
 This task is group task which contains next tasks:
-* [`deploy:prepare`](/docs/recipe/common.md#deployprepare)
-* [`deploy:vendors`](/docs/recipe/deploy/vendors.md#deployvendors)
-* [`deploy:publish`](/docs/recipe/common.md#deploypublish)
+* [deploy:prepare](/docs/recipe/common.md#deployprepare)
+* [deploy:vendors](/docs/recipe/deploy/vendors.md#deployvendors)
+* [deploy:publish](/docs/recipe/common.md#deploypublish)
 
 

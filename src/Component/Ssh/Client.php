@@ -32,7 +32,7 @@ class Client
     }
 
     /**
-     * @throws RunException|TimeoutException
+     * @throws RunException|TimeoutException|Exception
      */
     public function run(Host $host, string $command, array $config = []): string
     {
@@ -40,48 +40,47 @@ class Client
         $defaults = [
             'timeout' => $host->get('default_timeout', 300),
             'idle_timeout' => null,
-            'vars' => [],
+            'real_time_output' => false,
+            'no_throw' => false,
         ];
-
         $config = array_merge($defaults, $config);
-        $options = self::connectionOptions($host);
 
-        // TODO: Init multiplexing again only after passing ControlPersist seconds.
         if ($host->getSshMultiplexing()) {
             $this->initMultiplexing($host);
         }
 
-        $become = '';
-        if ($host->has('become')) {
-            $become = sprintf('sudo -H -u %s', $host->get('become'));
-        }
-
         $shellId = bin2hex(random_bytes(10));
         $shellCommand = $host->getShell();
+        if ($host->has('become')) {
+            $shellCommand = "sudo -H -u {$host->get('become')} " . $shellCommand;
+        }
 
-        $ssh = "ssh $options $connectionString $become " . escapeshellarg(": $shellId; $shellCommand; printf [exit_code:%s] $?;");
+        $ssh = array_merge(['ssh'], self::connectionOptionsArray($host), [$connectionString, ": $shellId; $shellCommand"]);
 
         // -vvv for ssh command
         if ($this->output->isDebug()) {
-            $this->pop->writeln(Process::OUT, $host, "$ssh");
+            $sshString = $ssh[0];
+            for ($i = 1; $i < count($ssh); $i++) {
+                $sshString .= ' ' . escapeshellarg((string)$ssh[$i]);
+            }
+            $this->output->writeln("[$host] $sshString");
         }
 
-        $this->pop->command($host, $command);
+        $this->pop->command($host, 'run', $command);
         $this->logger->log("[{$host->getAlias()}] run $command");
 
-        $command = $this->replacePlaceholders($command, $config['vars']);
         $command = str_replace('%secret%', $config['secret'] ?? '', $command);
         $command = str_replace('%sudo_pass%', $config['sudo_pass'] ?? '', $command);
 
-        $process = Process::fromShellCommandline($ssh);
+        $process = new Process($ssh);
         $process
-            ->setInput($command)
+            ->setInput("( $command ); printf '[exit_code:%s]' $?;")
             ->setTimeout($config['timeout'])
             ->setIdleTimeout($config['idle_timeout']);
 
-        $callback = function ($type, $buffer) use ($host) {
+        $callback = function ($type, $buffer) use ($config, $host) {
             $this->logger->printBuffer($host, $type, $buffer);
-            $this->pop->callback($host)($type, $buffer);
+            $this->pop->callback($host, $config['real_time_output'])($type, $buffer);
         };
 
         try {
@@ -99,7 +98,7 @@ class Client
         $output = $this->pop->filterOutput($process->getOutput());
         $exitCode = $this->parseExitStatus($process);
 
-        if ($exitCode !== 0) {
+        if ($exitCode !== 0 && !$config['no_throw']) {
             throw new RunException(
                 $host,
                 $command,
@@ -127,18 +126,18 @@ class Client
 
     private function initMultiplexing(Host $host): void
     {
-        $options = self::connectionOptions($host);
+        $options = self::connectionOptionsArray($host);
 
         if (!$this->isMasterRunning($host, $options)) {
             $connectionString = $host->getConnectionString();
-            $command = "ssh -N $options $connectionString";
+            $command = array_merge(['ssh', '-N'], $options, [$connectionString]);
 
             if ($this->output->isDebug()) {
-                $this->pop->writeln(Process::OUT, $host, '<info>ssh multiplexing initialization</info>');
-                $this->pop->writeln(Process::OUT, $host, $command);
+                $this->pop->writeln(Process::OUT, $host, '<info>ssh: multiplexing initialization</info>');
+                $this->pop->writeln(Process::OUT, $host, join(' ', $command));
             }
 
-            $process = Process::fromShellCommandline($command);
+            $process = new Process($command);
             $process->setTimeout(30); // Connection timeout (time needed to establish ssh multiplexing)
 
             try {
@@ -157,16 +156,17 @@ class Client
         }
     }
 
-    private function isMasterRunning(Host $host, string $options): bool
+    private function isMasterRunning(Host $host, array $options): bool
     {
-        $command = "ssh -O check $options echo 2>&1";
+        $command = array_merge(['ssh', '-O', 'check'], $options, ['echo']);
         if ($this->output->isDebug()) {
-            $this->pop->printBuffer(Process::OUT, $host, $command);
+            $this->pop->writeln(Process::OUT, $host, '<info>ssh: is master running?</info>');
+            $this->pop->printBuffer(Process::OUT, $host, join(' ', $command));
         }
 
-        $process = Process::fromShellCommandline($command);
+        $process = new Process($command);
         $process->run();
-        $output = $process->getOutput();
+        $output = $process->getErrorOutput();
 
         if ($this->output->isDebug()) {
             $this->pop->printBuffer(Process::OUT, $host, $output);
@@ -174,45 +174,47 @@ class Client
         return (bool)preg_match('/Master running/', $output);
     }
 
-    private function replacePlaceholders(string $command, array $variables): string
+    public static function connectionOptionsString(Host $host): string
     {
-        foreach ($variables as $placeholder => $replacement) {
-            $command = str_replace("%$placeholder%", $replacement, $command);
-        }
-
-        return $command;
+        return implode(' ', array_map('escapeshellarg', self::connectionOptionsArray($host)));
     }
 
-    public static function connectionOptions(Host $host): string
+    /**
+     * @return string[]
+     * @throws Exception
+     */
+    public static function connectionOptionsArray(Host $host): array
     {
-        $options = "";
+        $options = [];
 
         if ($host->has('ssh_arguments')) {
-            $options .= " " . implode(' ', $host->getSshArguments());
+            foreach ($host->getSshArguments() as $arg) {
+                $options = array_merge($options, explode(' ', $arg));
+            }
         }
 
         if ($host->has('port')) {
-            $options .= " -p " . $host->getPort();
+            $options = array_merge($options, ['-p', $host->getPort()]);
         }
 
         if ($host->has('config_file')) {
-            $options .= " -F " . $host->getConfigFile();
+            $options = array_merge($options, ['-F', parse_home_dir($host->getConfigFile())]);
         }
 
         if ($host->has('identity_file')) {
-            $options .= " -i " . $host->getIdentityFile();
+            $options = array_merge($options, ['-i', parse_home_dir($host->getIdentityFile())]);
         }
 
         if ($host->has('forward_agent') && $host->getForwardAgent()) {
-            $options .= " -A";
+            $options = array_merge($options, ['-A']);
         }
 
         if ($host->has('ssh_multiplexing') && $host->getSshMultiplexing()) {
-            $options .= " " . implode(' ', [
-                    '-o ControlMaster=auto',
-                    '-o ControlPersist=60',
-                    '-o ControlPath=' . self::generateControlPath($host),
-                ]);
+            $options = array_merge($options, [
+                '-o', 'ControlMaster=auto',
+                '-o', 'ControlPersist=60',
+                '-o', 'ControlPath=' . self::generateControlPath($host),
+            ]);
         }
 
         return $options;
@@ -235,7 +237,7 @@ class Client
             return '/dev/shm/%C';
         }
 
-        $connectionHashLength = 16; // Length of connection hash that OpenSSH appends to controlpath
+        $connectionHashLength = 17; // Length of connection hash that OpenSSH appends to controlpath
         $unixMaxPath = 104; // Theoretical max limit for path length
         $homeDir = parse_home_dir('~');
         $port = empty($host->get('port', '')) ? '' : ':' . $host->getPort();
@@ -257,7 +259,7 @@ class Client
                     $controlPath = "$homeDir/.ssh/deployer_$connectionData";
             }
             $tryLongestPossible++;
-        } while (strlen($controlPath) + $connectionHashLength > $unixMaxPath); // Unix socket max length
+        } while (strlen($controlPath) + $connectionHashLength >= $unixMaxPath); // Unix socket max length
 
         return $controlPath;
     }

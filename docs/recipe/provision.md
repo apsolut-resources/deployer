@@ -6,107 +6,145 @@
 
 [Source](/recipe/provision.php)
 
+* Requires
+  * [databases](/docs/recipe/provision/databases.md)
+  * [nodejs](/docs/recipe/provision/nodejs.md)
+  * [php](/docs/recipe/provision/php.md)
+  * [website](/docs/recipe/provision/website.md)
 
+## Configuration
+### lsb_release
+[Source](https://github.com/deployphp/deployer/blob/master/recipe/provision.php#L15)
 
-* Config
-  * [`php_version`](#php_version)
-  * [`sudo_password`](#sudo_password)
-* Tasks
-  * [`provision`](#provision) — Provision server with nginx, php, php-fpm
-  * [`provision:check`](#provisioncheck) — Check pre-required state
-  * [`provision:upgrade`](#provisionupgrade) — Upgrade all packages
-  * [`provision:install`](#provisioninstall) — Install base packages
-  * [`provision:ssh`](#provisionssh) — Configure SSH
-  * [`provision:user:deployer`](#provisionuserdeployer) — Setup deployer user
-  * [`provision:firewall`](#provisionfirewall) — Setup firewall
-  * [`provision:install:php`](#provisioninstallphp) — Install PHP packages
-  * [`provision:install:composer`](#provisioninstallcomposer) — Install Composer
-  * [`provision:config:php:sessions`](#provisionconfigphpsessions) — Configure php sessions directory
-  * [`provision:nginx:dhparam`](#provisionnginxdhparam) — Generating DH (Diffie Hellman) key
-  * [`provision:nginx`](#provisionnginx) — Install nginx & php-fpm
-
-## Config
-### php_version
-[Source](https://github.com/deployphp/deployer/search?q=%22php_version%22+in%3Afile+language%3Aphp+path%3Arecipe+filename%3Aprovision.php)
+Name of lsb_release like: focal, bionic, etc.
+As only Ubuntu 20.04 LTS is supported for provision should be the `focal`.
 
 
 
 ### sudo_password
-[Source](https://github.com/deployphp/deployer/search?q=%22sudo_password%22+in%3Afile+language%3Aphp+path%3Arecipe+filename%3Aprovision.php)
+[Source](https://github.com/deployphp/deployer/blob/master/recipe/provision.php#L215)
 
+
+
+
+
+### ssh_copy_id
+[Source](https://github.com/deployphp/deployer/blob/master/recipe/provision.php#L221)
+
+Specify which key to copy to server.
+Set to `false` to disable copy of key.
+
+```php title="Default value"
+'~/.ssh/id_rsa.pub'
+```
 
 
 
 ## Tasks
+
 ### provision
-[Source](https://github.com/deployphp/deployer/search?q=%22provision%22+in%3Afile+language%3Aphp+path%3Arecipe+filename%3Aprovision.php)
+[Source](https://github.com/deployphp/deployer/blob/master/recipe/provision.php#L20)
+
+Provision the server.
+
 
 
 
 This task is group task which contains next tasks:
-* [`provision:check`](/docs/recipe/provision.md#provisioncheck)
-* [`provision:upgrade`](/docs/recipe/provision.md#provisionupgrade)
-* [`provision:install`](/docs/recipe/provision.md#provisioninstall)
-* [`provision:ssh`](/docs/recipe/provision.md#provisionssh)
-* [`provision:ssh`](/docs/recipe/provision.md#provisionssh)
-* [`provision:user:deployer`](/docs/recipe/provision.md#provisionuserdeployer)
-* [`provision:firewall`](/docs/recipe/provision.md#provisionfirewall)
-* [`provision:install:php`](/docs/recipe/provision.md#provisioninstallphp)
-* [`provision:install:composer`](/docs/recipe/provision.md#provisioninstallcomposer)
+* [provision:check](/docs/recipe/provision.md#provisioncheck)
+* [provision:configure](/docs/recipe/provision.md#provisionconfigure)
+* [provision:update](/docs/recipe/provision.md#provisionupdate)
+* [provision:upgrade](/docs/recipe/provision.md#provisionupgrade)
+* [provision:install](/docs/recipe/provision.md#provisioninstall)
+* [provision:ssh](/docs/recipe/provision.md#provisionssh)
+* [provision:firewall](/docs/recipe/provision.md#provisionfirewall)
+* [provision:deployer](/docs/recipe/provision.md#provisiondeployer)
+* [provision:server](/docs/recipe/provision.md#provisionserver)
+* [provision:php](/docs/recipe/provision/php.md#provisionphp)
+* [provision:databases](/docs/recipe/provision/databases.md#provisiondatabases)
+* [provision:composer](/docs/recipe/provision/php.md#provisioncomposer)
+* [provision:npm](/docs/recipe/provision/nodejs.md#provisionnpm)
+* [provision:website](/docs/recipe/provision/website.md#provisionwebsite)
+* [provision:verify](/docs/recipe/provision.md#provisionverify)
 
 
 ### provision:check
-[Source](https://github.com/deployphp/deployer/search?q=%22provision%3Acheck%22+in%3Afile+language%3Aphp+path%3Arecipe+filename%3Aprovision.php)
+[Source](https://github.com/deployphp/deployer/blob/master/recipe/provision.php#L39)
+
+Checks pre-required state.
+
+
+
+
+### provision:configure
+[Source](https://github.com/deployphp/deployer/blob/master/recipe/provision.php#L58)
+
+Collects required params.
+
+
+
+
+### provision:update
+[Source](https://github.com/deployphp/deployer/blob/master/recipe/provision.php#L81)
+
+Adds repositories and update.
+
 
 
 
 ### provision:upgrade
-[Source](https://github.com/deployphp/deployer/search?q=%22provision%3Aupgrade%22+in%3Afile+language%3Aphp+path%3Arecipe+filename%3Aprovision.php)
+[Source](https://github.com/deployphp/deployer/blob/master/recipe/provision.php#L103)
+
+Upgrades all packages.
+
 
 
 
 ### provision:install
-[Source](https://github.com/deployphp/deployer/search?q=%22provision%3Ainstall%22+in%3Afile+language%3Aphp+path%3Arecipe+filename%3Aprovision.php)
+[Source](https://github.com/deployphp/deployer/blob/master/recipe/provision.php#L110)
+
+Installs packages.
+
+
+
+
+### provision:server
+[Source](https://github.com/deployphp/deployer/blob/master/recipe/provision.php#L144)
+
+Configures a server.
+
 
 
 
 ### provision:ssh
-[Source](https://github.com/deployphp/deployer/search?q=%22provision%3Assh%22+in%3Afile+language%3Aphp+path%3Arecipe+filename%3Aprovision.php)
+[Source](https://github.com/deployphp/deployer/blob/master/recipe/provision.php#L205)
+
+Configures the ssh.
 
 
 
-### provision:user:deployer
-[Source](https://github.com/deployphp/deployer/search?q=%22provision%3Auser%3Adeployer%22+in%3Afile+language%3Aphp+path%3Arecipe+filename%3Aprovision.php)
+
+### provision:deployer
+[Source](https://github.com/deployphp/deployer/blob/master/recipe/provision.php#L224)
+
+Setups a deployer user.
+
 
 
 
 ### provision:firewall
-[Source](https://github.com/deployphp/deployer/search?q=%22provision%3Afirewall%22+in%3Afile+language%3Aphp+path%3Arecipe+filename%3Aprovision.php)
+[Source](https://github.com/deployphp/deployer/blob/master/recipe/provision.php#L271)
+
+Setups a firewall.
 
 
 
-### provision:install:php
-[Source](https://github.com/deployphp/deployer/search?q=%22provision%3Ainstall%3Aphp%22+in%3Afile+language%3Aphp+path%3Arecipe+filename%3Aprovision.php)
 
+### provision:verify
+[Source](https://github.com/deployphp/deployer/blob/master/recipe/provision.php#L279)
 
+Verifies what provision was successful.
 
-### provision:install:composer
-[Source](https://github.com/deployphp/deployer/search?q=%22provision%3Ainstall%3Acomposer%22+in%3Afile+language%3Aphp+path%3Arecipe+filename%3Aprovision.php)
-
-
-
-### provision:config:php:sessions
-[Source](https://github.com/deployphp/deployer/search?q=%22provision%3Aconfig%3Aphp%3Asessions%22+in%3Afile+language%3Aphp+path%3Arecipe+filename%3Aprovision.php)
-
-
-
-### provision:nginx:dhparam
-[Source](https://github.com/deployphp/deployer/search?q=%22provision%3Anginx%3Adhparam%22+in%3Afile+language%3Aphp+path%3Arecipe+filename%3Aprovision.php)
-
-
-
-### provision:nginx
-[Source](https://github.com/deployphp/deployer/search?q=%22provision%3Anginx%22+in%3Afile+language%3Aphp+path%3Arecipe+filename%3Aprovision.php)
 
 
 

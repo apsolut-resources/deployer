@@ -2,36 +2,29 @@
 namespace Deployer;
 
 use Deployer\Exception\GracefulShutdownException;
-use Deployer\Exception\RunException;
 
-desc('Lock deploy');
+desc('Locks deploy');
 task('deploy:lock', function () {
-    $locked = test("[ -f {{deploy_path}}/.dep/deploy.lock ]");
-
-    if ($locked) {
+    $user = escapeshellarg(get('user'));
+    $locked = run("[ -f {{deploy_path}}/.dep/deploy.lock ] && echo +locked || echo $user > {{deploy_path}}/.dep/deploy.lock");
+    if ($locked === '+locked') {
         throw new GracefulShutdownException(
             "Deploy locked.\n" .
             "Execute \"deploy:unlock\" task to unlock."
         );
-    } else {
-        run("echo \"{{user}}\" > {{deploy_path}}/.dep/deploy.lock");
     }
 });
 
-desc('Unlock deploy');
+desc('Unlocks deploy');
 task('deploy:unlock', function () {
     run("rm -f {{deploy_path}}/.dep/deploy.lock");//always success
 });
 
-desc('Check if deploy is unlocked');
-task('deploy:is-unlocked', function () {
+desc('Checks if deploy is locked');
+task('deploy:is_locked', function () {
     $locked = test("[ -f {{deploy_path}}/.dep/deploy.lock ]");
-
     if ($locked) {
-        writeln( 'Deploy is currently locked.');
-
-        throw new GracefulShutdownException();
+        throw new GracefulShutdownException("Deploy is locked.");
     }
-
-    writeln( 'Deploy is currently unlocked.');
+    info('Deploy is unlocked.');
 });

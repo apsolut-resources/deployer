@@ -8,19 +8,29 @@
 
 
 
-* Tasks
-  * [`deploy:lock`](#deploylock) — Lock deploy
-  * [`deploy:unlock`](#deployunlock) — Unlock deploy
-
-
 ## Tasks
+
 ### deploy:lock
-[Source](https://github.com/deployphp/deployer/search?q=%22deploy%3Alock%22+in%3Afile+language%3Aphp+path%3Arecipe%2Fdeploy+filename%3Alock.php)
+[Source](https://github.com/deployphp/deployer/blob/master/recipe/deploy/lock.php#L7)
+
+Locks deploy.
+
 
 
 
 ### deploy:unlock
-[Source](https://github.com/deployphp/deployer/search?q=%22deploy%3Aunlock%22+in%3Afile+language%3Aphp+path%3Arecipe%2Fdeploy+filename%3Alock.php)
+[Source](https://github.com/deployphp/deployer/blob/master/recipe/deploy/lock.php#L19)
+
+Unlocks deploy.
+
+
+
+
+### deploy:is_locked
+[Source](https://github.com/deployphp/deployer/blob/master/recipe/deploy/lock.php#L24)
+
+Checks if deploy is locked.
+
 
 
 

@@ -7,6 +7,7 @@
 [Source](/contrib/phinx.php)
 
 
+
 ## Installing
 
 Add to your _deploy.php_
@@ -71,31 +72,46 @@ For further reading see [phinx.org](https://phinx.org). Complete descriptions of
 
 
 
-* Tasks
-  * [`phinx:migrate`](#phinxmigrate) — Migrating database with phinx
-  * [`phinx:rollback`](#phinxrollback) — Rollback database migrations with phinx
-  * [`phinx:seed`](#phinxseed) — Seed database with phinx
-  * [`phinx:breakpoint`](#phinxbreakpoint) — Set a migrations breakpoint with phinx
+## Configuration
+### bin/phinx
+[Source](https://github.com/deployphp/deployer/blob/master/contrib/phinx.php#L87)
+
+Path to Phinx
+
+
 
 
 ## Tasks
+
 ### phinx:migrate
-[Source](https://github.com/deployphp/deployer/search?q=%22phinx%3Amigrate%22+in%3Afile+language%3Aphp+path%3Acontrib+filename%3Aphinx.php)
+[Source](https://github.com/deployphp/deployer/blob/master/contrib/phinx.php#L154)
+
+Migrats database with phinx.
+
 
 
 
 ### phinx:rollback
-[Source](https://github.com/deployphp/deployer/search?q=%22phinx%3Arollback%22+in%3Afile+language%3Aphp+path%3Acontrib+filename%3Aphinx.php)
+[Source](https://github.com/deployphp/deployer/blob/master/contrib/phinx.php#L176)
+
+Rollbacks database migrations with phinx.
+
 
 
 
 ### phinx:seed
-[Source](https://github.com/deployphp/deployer/search?q=%22phinx%3Aseed%22+in%3Afile+language%3Aphp+path%3Acontrib+filename%3Aphinx.php)
+[Source](https://github.com/deployphp/deployer/blob/master/contrib/phinx.php#L198)
+
+Seeds database with phinx.
+
 
 
 
 ### phinx:breakpoint
-[Source](https://github.com/deployphp/deployer/search?q=%22phinx%3Abreakpoint%22+in%3Afile+language%3Aphp+path%3Acontrib+filename%3Aphinx.php)
+[Source](https://github.com/deployphp/deployer/blob/master/contrib/phinx.php#L219)
+
+Sets a migrations breakpoint with phinx.
+
 
 
 

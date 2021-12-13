@@ -7,34 +7,49 @@
 [Source](/recipe/deploy/update_code.php)
 
 
-
-* Config
-  * [`branch`](#branch)
-  * [`git_cache`](#git_cache)
-* Tasks
-  * [`deploy:update_code`](#deployupdate_code) — Update code
-
-## Config
+## Configuration
 ### branch
-[Source](https://github.com/deployphp/deployer/search?q=%22branch%22+in%3Afile+language%3Aphp+path%3Arecipe%2Fdeploy+filename%3Aupdate_code.php)
+[Source](https://github.com/deployphp/deployer/blob/master/recipe/deploy/update_code.php#L10)
 
-Determines which branch to deploy. Can be overridden with cli option `--branch`.
+Determines which branch to deploy. Can be overridden with CLI option `--branch`.
 If not specified, will get current git HEAD branch as default branch to deploy.
 
-### git_cache
-[Source](https://github.com/deployphp/deployer/search?q=%22git_cache%22+in%3Afile+language%3Aphp+path%3Arecipe%2Fdeploy+filename%3Aupdate_code.php)
+```php title="Default value"
+'HEAD'
+```
 
-This config option will if set to true will instructs git to use previous release files,
-and download only changed files from server.
 
-You don't need to set this option, it will automatically detect if your git supports this feature.
+### auto_ssh_keygen
+[Source](https://github.com/deployphp/deployer/blob/master/recipe/deploy/update_code.php#L13)
 
-Faster cloning by borrowing objects from existing clones.
+Automatically populate `known_hosts` file based on [repository](/docs/recipe/common.md#repository) config.
+
+```php title="Default value"
+true
+```
+
+
+### update_code_strategy
+[Source](https://github.com/deployphp/deployer/blob/master/recipe/deploy/update_code.php#L19)
+
+Sets deploy:update_code strategy.
+Can be one of:
+- archive
+- clone (if you need `.git` dir in your [release_path](/docs/recipe/deploy/release.md#release_path))
+
+```php title="Default value"
+'archive'
+```
+
 
 
 ## Tasks
+
 ### deploy:update_code
-[Source](https://github.com/deployphp/deployer/search?q=%22deploy%3Aupdate_code%22+in%3Afile+language%3Aphp+path%3Arecipe%2Fdeploy+filename%3Aupdate_code.php)
+[Source](https://github.com/deployphp/deployer/blob/master/recipe/deploy/update_code.php#L25)
+
+Updates code.
 
 Update code at [release_path](/docs/recipe/deploy/release.md#release_path) on host.
+
 

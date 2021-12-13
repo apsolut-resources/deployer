@@ -6,23 +6,23 @@
 
 [Source](/recipe/zend_framework.php)
 
-
-
-* Require
-  * [`recipe/common.php`](/docs/recipe/common.md)
-* Tasks
-  * [`deploy`](#deploy) — Deploy your project
+* Requires
+  * [common](/docs/recipe/common.md)
 
 
 ## Tasks
+
 ### deploy
-[Source](https://github.com/deployphp/deployer/search?q=%22deploy%22+in%3Afile+language%3Aphp+path%3Arecipe+filename%3Azend_framework.php)
+[Source](https://github.com/deployphp/deployer/blob/master/recipe/zend_framework.php#L12)
+
+Deploys your project.
 
 Main task
 
+
 This task is group task which contains next tasks:
-* [`deploy:prepare`](/docs/recipe/common.md#deployprepare)
-* [`deploy:vendors`](/docs/recipe/deploy/vendors.md#deployvendors)
-* [`deploy:publish`](/docs/recipe/common.md#deploypublish)
+* [deploy:prepare](/docs/recipe/common.md#deployprepare)
+* [deploy:vendors](/docs/recipe/deploy/vendors.md#deployvendors)
+* [deploy:publish](/docs/recipe/common.md#deploypublish)
 
 

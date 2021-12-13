@@ -31,15 +31,15 @@ set('newrelic_app_id', function () {
     throw new \Exception('Please, configure "newrelic_app_id" parameter.');
 });
 
-set('newrelic_description', function() {
+set('newrelic_description', function () {
     return runLocally('git log -n 1 --format="%an: %s" | tr \'"\' "\'"');
 });
 
-set('newrelic_revision', function() {
+set('newrelic_revision', function () {
     return runLocally('git log -n 1 --format="%h"');
 });
 
-desc('Notifying New Relic of deployment');
+desc('Notifies New Relic of deployment');
 task('newrelic:notify', function () {
     if (($appId = get('newrelic_app_id')) && ($apiKey = get('newrelic_api_key'))) {
         $data = [
@@ -49,11 +49,10 @@ task('newrelic:notify', function () {
         ];
 
         Httpie::post("https://api.newrelic.com/v2/applications/$appId/deployments.json")
-            ->header("X-Api-Key: $apiKey")
+            ->header("X-Api-Key", $apiKey)
             ->query(['deployment' => $data])
             ->send();
     }
 })
     ->once()
-    ->shallow()
     ->hidden();

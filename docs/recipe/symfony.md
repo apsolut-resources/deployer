@@ -6,87 +6,114 @@
 
 [Source](/recipe/symfony.php)
 
+* Requires
+  * [common](/docs/recipe/common.md)
 
-
-* Require
-  * [`recipe/common.php`](/docs/recipe/common.md)
-* Config
-  * [`symfony_version`](#symfony_version)
-  * [`shared_dirs`](#shared_dirs)
-  * [`shared_files`](#shared_files)
-  * [`writable_dirs`](#writable_dirs)
-  * [`migrations_config`](#migrations_config)
-  * [`console_options`](#console_options)
-* Tasks
-  * [`database:migrate`](#databasemigrate) — Migrate database
-  * [`deploy:cache:clear`](#deploycacheclear) — Clear cache
-  * [`deploy:cache:warmup`](#deploycachewarmup) — Warm up cache
-  * [`deploy`](#deploy) — Deploy project
-
-## Config
+## Configuration
 ### symfony_version
-[Source](https://github.com/deployphp/deployer/search?q=%22symfony_version%22+in%3Afile+language%3Aphp+path%3Arecipe+filename%3Asymfony.php)
+[Source](https://github.com/deployphp/deployer/blob/master/recipe/symfony.php#L8)
+
+
 
 
 
 ### shared_dirs
-[Source](https://github.com/deployphp/deployer/search?q=%22shared_dirs%22+in%3Afile+language%3Aphp+path%3Arecipe+filename%3Asymfony.php)
+[Source](https://github.com/deployphp/deployer/blob/master/recipe/symfony.php#L14)
 
-* Overrides [`shared_dirs`](/docs/recipe/common.md#shared_dirs) from `recipe/common.php`
+Overrides [shared_dirs](/docs/recipe/deploy/shared.md#shared_dirs) from `recipe/deploy/shared.php`.
 
+
+
+```php title="Default value"
+[
+    'var/log',
+]
+```
 
 
 ### shared_files
-[Source](https://github.com/deployphp/deployer/search?q=%22shared_files%22+in%3Afile+language%3Aphp+path%3Arecipe+filename%3Asymfony.php)
+[Source](https://github.com/deployphp/deployer/blob/master/recipe/symfony.php#L18)
 
-* Overrides [`shared_files`](/docs/recipe/common.md#shared_files) from `recipe/common.php`
+Overrides [shared_files](/docs/recipe/deploy/shared.md#shared_files) from `recipe/deploy/shared.php`.
 
+
+
+```php title="Default value"
+[
+    '.env.local'
+]
+```
 
 
 ### writable_dirs
-[Source](https://github.com/deployphp/deployer/search?q=%22writable_dirs%22+in%3Afile+language%3Aphp+path%3Arecipe+filename%3Asymfony.php)
+[Source](https://github.com/deployphp/deployer/blob/master/recipe/symfony.php#L22)
 
-* Overrides [`writable_dirs`](/docs/recipe/deploy/writable.md#writable_dirs) from `recipe/deploy/writable.php`
+Overrides [writable_dirs](/docs/recipe/deploy/writable.md#writable_dirs) from `recipe/deploy/writable.php`.
 
+
+
+```php title="Default value"
+[
+    'var'
+]
+```
 
 
 ### migrations_config
-[Source](https://github.com/deployphp/deployer/search?q=%22migrations_config%22+in%3Afile+language%3Aphp+path%3Arecipe+filename%3Asymfony.php)
+[Source](https://github.com/deployphp/deployer/blob/master/recipe/symfony.php#L26)
 
+
+
+
+
+### bin/console
+[Source](https://github.com/deployphp/deployer/blob/master/recipe/symfony.php#L28)
+
+
+
+```php title="Default value"
+'{{bin/php}} {{release_or_current_path}}/bin/console'
+```
 
 
 ### console_options
-[Source](https://github.com/deployphp/deployer/search?q=%22console_options%22+in%3Afile+language%3Aphp+path%3Arecipe+filename%3Asymfony.php)
+[Source](https://github.com/deployphp/deployer/blob/master/recipe/symfony.php#L30)
+
+
 
 
 
 
 ## Tasks
+
 ### database:migrate
-[Source](https://github.com/deployphp/deployer/search?q=%22database%3Amigrate%22+in%3Afile+language%3Aphp+path%3Arecipe+filename%3Asymfony.php)
+[Source](https://github.com/deployphp/deployer/blob/master/recipe/symfony.php#L35)
+
+Migrates database.
+
 
 
 
 ### deploy:cache:clear
-[Source](https://github.com/deployphp/deployer/search?q=%22deploy%3Acache%3Aclear%22+in%3Afile+language%3Aphp+path%3Arecipe+filename%3Asymfony.php)
+[Source](https://github.com/deployphp/deployer/blob/master/recipe/symfony.php#L45)
 
+Clears cache.
 
-
-### deploy:cache:warmup
-[Source](https://github.com/deployphp/deployer/search?q=%22deploy%3Acache%3Awarmup%22+in%3Afile+language%3Aphp+path%3Arecipe+filename%3Asymfony.php)
 
 
 
 ### deploy
-[Source](https://github.com/deployphp/deployer/search?q=%22deploy%22+in%3Afile+language%3Aphp+path%3Arecipe+filename%3Asymfony.php)
+[Source](https://github.com/deployphp/deployer/blob/master/recipe/symfony.php#L54)
+
+Deploys project.
+
 
 
 
 This task is group task which contains next tasks:
-* [`deploy:prepare`](/docs/recipe/common.md#deployprepare)
-* [`deploy:vendors`](/docs/recipe/deploy/vendors.md#deployvendors)
-* [`deploy:cache:clear`](/docs/recipe/symfony.md#deploycacheclear)
-* [`deploy:cache:warmup`](/docs/recipe/symfony.md#deploycachewarmup)
-* [`deploy:publish`](/docs/recipe/common.md#deploypublish)
+* [deploy:prepare](/docs/recipe/common.md#deployprepare)
+* [deploy:vendors](/docs/recipe/deploy/vendors.md#deployvendors)
+* [deploy:cache:clear](/docs/recipe/symfony.md#deploycacheclear)
+* [deploy:publish](/docs/recipe/common.md#deploypublish)
 
 

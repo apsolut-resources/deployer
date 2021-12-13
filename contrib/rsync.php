@@ -1,5 +1,9 @@
 <?php
 /*
+## IMPORTANT
+
+This must not be confused with `/src/Utility/Rsync.php`, deployer's built-in rsync. Their configuration options are also very different, read carefully below.
+
 ## Installing
 
 Add to your _deploy.php_
@@ -118,6 +122,8 @@ host('hostname')
 namespace Deployer;
 
 use Deployer\Component\Ssh\Client;
+use Deployer\Host\Localhost;
+use Deployer\Task\Context;
 
 set('rsync', [
     'exclude' => [
@@ -197,7 +203,7 @@ set('rsync_options', function () {
 });
 
 
-desc('Warmup remote Rsync target');
+desc('Warmups remote Rsync target');
 task('rsync:warmup', function() {
     $config = get('rsync');
 
@@ -240,15 +246,13 @@ task('rsync', function() {
         throw new \RuntimeException('You need to specify a destination path.');
     }
 
-    $host = \Deployer\Task\Context::get()->getHost();
-    if ($host instanceof \Deployer\Host\Localhost) {
+    $host = Context::get()->getHost();
+    if ($host instanceof Localhost) {
         runLocally("rsync -{$config['flags']} {{rsync_options}}{{rsync_includes}}{{rsync_excludes}}{{rsync_filter}} '$src/' '$dst/'", $config);
         return;
     }
 
-    $sshArguments = Client::connectionOptions($host);
-    $user = !$host->getRemoteUser() ? '' : $host->getRemoteUser() . '@';
-    $host = $host->getHostname();
+    $sshArguments = Client::connectionOptionsString($host);
 
-    runLocally("rsync -{$config['flags']} -e 'ssh  $sshArguments' {{rsync_options}}{{rsync_includes}}{{rsync_excludes}}{{rsync_filter}} '$src/' '$user$host:$dst/'", $config);
+    runLocally("rsync -{$config['flags']} -e 'ssh $sshArguments' {{rsync_options}}{{rsync_includes}}{{rsync_excludes}}{{rsync_filter}} '$src/' '{$host->getConnectionString()}:$dst/'", $config);
 });

@@ -89,47 +89,44 @@ set('teams_color', '#4d91f7');
 set('teams_success_color', '#00c100');
 set('teams_failure_color', '#ff0909');
 
-desc('Notifying Teams');
+desc('Notifies Teams');
 task('teams:notify', function () {
     if (!get('teams_webhook', false)) {
         return;
     }
 
-    Httpie::post(get('teams_webhook'))->body([
+    Httpie::post(get('teams_webhook'))->jsonBody([
         "themeColor" => get('teams_color'),
         'text'       => get('teams_text')
     ])->send();
 })
     ->once()
-    ->shallow()
     ->hidden();
 
-desc('Notifying Teams about deploy finish');
+desc('Notifies Teams about deploy finish');
 task('teams:notify:success', function () {
     if (!get('teams_webhook', false)) {
         return;
     }
 
-    Httpie::post(get('teams_webhook'))->body([
+    Httpie::post(get('teams_webhook'))->jsonBody([
         "themeColor" => get('teams_success_color'),
         'text'       => get('teams_success_text')
     ])->send();
 })
     ->once()
-    ->shallow()
     ->hidden();
 
-desc('Notifying Teams about deploy failure');
+desc('Notifies Teams about deploy failure');
 task('teams:notify:failure', function () {
     if (!get('teams_webhook', false)) {
         return;
     }
 
-    Httpie::post(get('teams_webhook'))->body([
+    Httpie::post(get('teams_webhook'))->jsonBody([
         "themeColor" => get('teams_failure_color'),
         'text'       => get('teams_failure_text')
     ])->send();
 })
     ->once()
-    ->shallow()
     ->hidden();

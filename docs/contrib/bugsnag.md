@@ -7,6 +7,7 @@
 [Source](/contrib/bugsnag.php)
 
 
+
 Add to your _deploy.php_
 
 ```php
@@ -28,13 +29,14 @@ after('deploy', 'bugsnag:notify');
 ```
 
 
-* Tasks
-  * [`bugsnag:notify`](#bugsnagnotify) — Notifying Bugsnag of deployment
-
 
 ## Tasks
+
 ### bugsnag:notify
-[Source](https://github.com/deployphp/deployer/search?q=%22bugsnag%3Anotify%22+in%3Afile+language%3Aphp+path%3Acontrib+filename%3Abugsnag.php)
+[Source](https://github.com/deployphp/deployer/blob/master/contrib/bugsnag.php#L28)
+
+Notifies Bugsnag of deployment.
+
 
 
 

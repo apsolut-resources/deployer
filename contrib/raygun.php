@@ -30,7 +30,7 @@ namespace Deployer;
 
 use Deployer\Utility\Httpie;
 
-desc('Notifying Raygun of deployment');
+desc('Notifies Raygun of deployment');
 task('raygun:notify', function () {
     $data = [
         'apiKey'       => get('raygun_api_key'),
@@ -43,6 +43,6 @@ task('raygun:notify', function () {
     ];
 
     Httpie::post('https://app.raygun.io/deployments')
-        ->body($data)
+        ->jsonBody($data)
         ->send();
 });

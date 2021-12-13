@@ -7,40 +7,76 @@
 [Source](/recipe/deploy/release.php)
 
 
-
-* Config
-  * [`release_name`](#release_name)
-  * [`releases_metainfo`](#releases_metainfo)
-  * [`releases_list`](#releases_list)
-  * [`release_path`](#release_path)
-* Tasks
-  * [`deploy:release`](#deployrelease) — Prepare release. Clean up unfinished releases and prepare next release
-
-## Config
+## Configuration
 ### release_name
-[Source](https://github.com/deployphp/deployer/search?q=%22release_name%22+in%3Afile+language%3Aphp+path%3Arecipe%2Fdeploy+filename%3Arelease.php)
+[Source](https://github.com/deployphp/deployer/blob/master/recipe/deploy/release.php#L8)
 
-Name of folder in releases.
+The name of the release.
 
-### releases_metainfo
-[Source](https://github.com/deployphp/deployer/search?q=%22releases_metainfo%22+in%3Afile+language%3Aphp+path%3Arecipe%2Fdeploy+filename%3Arelease.php)
 
-Holds metainfo about releases from `.dep/releases` file.
+
+### releases_log
+[Source](https://github.com/deployphp/deployer/blob/master/recipe/deploy/release.php#L14)
+
+Holds releases log from `.dep/releases_log` file.
+
+
 
 ### releases_list
-[Source](https://github.com/deployphp/deployer/search?q=%22releases_list%22+in%3Afile+language%3Aphp+path%3Arecipe%2Fdeploy+filename%3Arelease.php)
+[Source](https://github.com/deployphp/deployer/blob/master/recipe/deploy/release.php#L39)
 
-Return list of releases on host.
+Return list of release names on host.
+
+
 
 ### release_path
-[Source](https://github.com/deployphp/deployer/search?q=%22release_path%22+in%3Afile+language%3Aphp+path%3Arecipe%2Fdeploy+filename%3Arelease.php)
+[Source](https://github.com/deployphp/deployer/blob/master/recipe/deploy/release.php#L66)
 
 Return release path.
 
 
-## Tasks
-### deploy:release
-[Source](https://github.com/deployphp/deployer/search?q=%22deploy%3Arelease%22+in%3Afile+language%3Aphp+path%3Arecipe%2Fdeploy+filename%3Arelease.php)
 
+### release_revision
+[Source](https://github.com/deployphp/deployer/blob/master/recipe/deploy/release.php#L77)
+
+Current release revision. Usually a git hash.
+
+
+
+### release_or_current_path
+[Source](https://github.com/deployphp/deployer/blob/master/recipe/deploy/release.php#L83)
+
+Return the release path during a deployment
+but fallback to the current path otherwise.
+
+
+
+
+## Tasks
+
+### deploy:release
+[Source](https://github.com/deployphp/deployer/blob/master/recipe/deploy/release.php#L90)
+
+Prepares release.
+
+Clean up unfinished releases and prepare next release
+
+
+### releases
+[Source](https://github.com/deployphp/deployer/blob/master/recipe/deploy/release.php#L157)
+
+Shows releases list.
+
+Example output:
+```
++---------------------+------example.org ------------+--------+-----------+
+| Date (UTC)          | Release     | Author         | Target | Commit    |
++---------------------+-------------+----------------+--------+-----------+
+| 2021-11-06 20:51:45 | 1           | Anton Medvedev | HEAD   | 34d24192e |
+| 2021-11-06 21:00:50 | 2 (bad)     | Anton Medvedev | HEAD   | 392948a40 |
+| 2021-11-06 23:19:20 | 3           | Anton Medvedev | HEAD   | a4057a36c |
+| 2021-11-06 23:24:30 | 4 (current) | Anton Medvedev | HEAD   | s3wa45ca6 |
++---------------------+-------------+----------------+--------+-----------+
+```
 
 

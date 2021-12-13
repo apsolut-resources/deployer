@@ -7,6 +7,11 @@
 [Source](/contrib/rsync.php)
 
 
+
+## IMPORTANT
+
+This must not be confused with `/src/Utility/Rsync.php`, deployer's built-in rsync. Their configuration options are also very different, read carefully below.
+
 ## Installing
 
 Add to your _deploy.php_
@@ -123,63 +128,95 @@ host('hostname')
 
 
 
-* Config
-  * [`rsync`](#rsync)
-  * [`rsync_src`](#rsync_src)
-  * [`rsync_dest`](#rsync_dest)
-  * [`rsync_excludes`](#rsync_excludes)
-  * [`rsync_includes`](#rsync_includes)
-  * [`rsync_filter`](#rsync_filter)
-  * [`rsync_options`](#rsync_options)
-* Tasks
-  * [`rsync:warmup`](#rsyncwarmup) — Warmup remote Rsync target
-  * [`rsync`](#rsync) — Rsync local->remote
-
-## Config
+## Configuration
 ### rsync
-[Source](https://github.com/deployphp/deployer/search?q=%22rsync%22+in%3Afile+language%3Aphp+path%3Acontrib+filename%3Arsync.php)
+[Source](https://github.com/deployphp/deployer/blob/master/contrib/rsync.php#L128)
 
+
+
+```php title="Default value"
+[
+    'exclude' => [
+        '.git',
+        'deploy.php',
+    ],
+    'exclude-file' => false,
+    'include' => [],
+    'include-file' => false,
+    'filter' => [],
+    'filter-file' => false,
+    'filter-perdir' => false,
+    'flags' => 'rz',
+    'options' => ['delete'],
+    'timeout' => 300,
+]
+```
 
 
 ### rsync_src
-[Source](https://github.com/deployphp/deployer/search?q=%22rsync_src%22+in%3Afile+language%3Aphp+path%3Acontrib+filename%3Arsync.php)
+[Source](https://github.com/deployphp/deployer/blob/master/contrib/rsync.php#L144)
 
+
+
+```php title="Default value"
+__DIR__
+```
 
 
 ### rsync_dest
-[Source](https://github.com/deployphp/deployer/search?q=%22rsync_dest%22+in%3Afile+language%3Aphp+path%3Acontrib+filename%3Arsync.php)
+[Source](https://github.com/deployphp/deployer/blob/master/contrib/rsync.php#L145)
 
+
+
+```php title="Default value"
+'{{release_path}}'
+```
 
 
 ### rsync_excludes
-[Source](https://github.com/deployphp/deployer/search?q=%22rsync_excludes%22+in%3Afile+language%3Aphp+path%3Acontrib+filename%3Arsync.php)
+[Source](https://github.com/deployphp/deployer/blob/master/contrib/rsync.php#L147)
+
+
 
 
 
 ### rsync_includes
-[Source](https://github.com/deployphp/deployer/search?q=%22rsync_includes%22+in%3Afile+language%3Aphp+path%3Acontrib+filename%3Arsync.php)
+[Source](https://github.com/deployphp/deployer/blob/master/contrib/rsync.php#L162)
+
+
 
 
 
 ### rsync_filter
-[Source](https://github.com/deployphp/deployer/search?q=%22rsync_filter%22+in%3Afile+language%3Aphp+path%3Acontrib+filename%3Arsync.php)
+[Source](https://github.com/deployphp/deployer/blob/master/contrib/rsync.php#L177)
+
+
 
 
 
 ### rsync_options
-[Source](https://github.com/deployphp/deployer/search?q=%22rsync_options%22+in%3Afile+language%3Aphp+path%3Acontrib+filename%3Arsync.php)
+[Source](https://github.com/deployphp/deployer/blob/master/contrib/rsync.php#L195)
+
+
 
 
 
 
 ## Tasks
+
 ### rsync:warmup
-[Source](https://github.com/deployphp/deployer/search?q=%22rsync%3Awarmup%22+in%3Afile+language%3Aphp+path%3Acontrib+filename%3Arsync.php)
+[Source](https://github.com/deployphp/deployer/blob/master/contrib/rsync.php#L207)
+
+Warmups remote Rsync target.
+
 
 
 
 ### rsync
-[Source](https://github.com/deployphp/deployer/search?q=%22rsync%22+in%3Afile+language%3Aphp+path%3Acontrib+filename%3Arsync.php)
+[Source](https://github.com/deployphp/deployer/blob/master/contrib/rsync.php#L222)
+
+Rsync local->remote.
+
 
 
 

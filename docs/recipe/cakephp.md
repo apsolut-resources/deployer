@@ -6,55 +6,72 @@
 
 [Source](/recipe/cakephp.php)
 
+* Requires
+  * [common](/docs/recipe/common.md)
 
-
-* Require
-  * [`recipe/common.php`](/docs/recipe/common.md)
-* Config
-  * [`shared_dirs`](#shared_dirs)
-  * [`shared_files`](#shared_files)
-* Tasks
-  * [`deploy:init`](#deployinit)
-  * [`deploy:run_migrations`](#deployrun_migrations)
-  * [`deploy`](#deploy)
-
-## Config
+## Configuration
 ### shared_dirs
-[Source](https://github.com/deployphp/deployer/search?q=%22shared_dirs%22+in%3Afile+language%3Aphp+path%3Arecipe+filename%3Acakephp.php)
+[Source](https://github.com/deployphp/deployer/blob/master/recipe/cakephp.php#L13)
 
-* Overrides [`shared_dirs`](/docs/recipe/common.md#shared_dirs) from `recipe/common.php`
+Overrides [shared_dirs](/docs/recipe/deploy/shared.md#shared_dirs) from `recipe/deploy/shared.php`.
 
 CakePHP 4 Project Template shared dirs
 
-### shared_files
-[Source](https://github.com/deployphp/deployer/search?q=%22shared_files%22+in%3Afile+language%3Aphp+path%3Arecipe+filename%3Acakephp.php)
+```php title="Default value"
+[
+    'logs',
+    'tmp',
+]
+```
 
-* Overrides [`shared_files`](/docs/recipe/common.md#shared_files) from `recipe/common.php`
+
+### shared_files
+[Source](https://github.com/deployphp/deployer/blob/master/recipe/cakephp.php#L19)
+
+Overrides [shared_files](/docs/recipe/deploy/shared.md#shared_files) from `recipe/deploy/shared.php`.
 
 CakePHP 4 Project Template shared files
 
+```php title="Default value"
+[
+    'config/.env',
+    'config/app.php',
+]
+```
+
+
 
 ## Tasks
+
 ### deploy:init
-[Source](https://github.com/deployphp/deployer/search?q=%22deploy%3Ainit%22+in%3Afile+language%3Aphp+path%3Arecipe+filename%3Acakephp.php)
+[Source](https://github.com/deployphp/deployer/blob/master/recipe/cakephp.php#L27)
+
+
 
 Create plugins' symlinks
 
+
 ### deploy:run_migrations
-[Source](https://github.com/deployphp/deployer/search?q=%22deploy%3Arun_migrations%22+in%3Afile+language%3Aphp+path%3Arecipe+filename%3Acakephp.php)
+[Source](https://github.com/deployphp/deployer/blob/master/recipe/cakephp.php#L34)
+
+
 
 Run migrations
 
+
 ### deploy
-[Source](https://github.com/deployphp/deployer/search?q=%22deploy%22+in%3Afile+language%3Aphp+path%3Arecipe+filename%3Acakephp.php)
+[Source](https://github.com/deployphp/deployer/blob/master/recipe/cakephp.php#L42)
+
+
 
 Main task
 
+
 This task is group task which contains next tasks:
-* [`deploy:prepare`](/docs/recipe/common.md#deployprepare)
-* [`deploy:vendors`](/docs/recipe/deploy/vendors.md#deployvendors)
-* [`deploy:init`](/docs/recipe/cakephp.md#deployinit)
-* [`deploy:run_migrations`](/docs/recipe/cakephp.md#deployrun_migrations)
-* [`deploy:publish`](/docs/recipe/common.md#deploypublish)
+* [deploy:prepare](/docs/recipe/common.md#deployprepare)
+* [deploy:vendors](/docs/recipe/deploy/vendors.md#deployvendors)
+* [deploy:init](/docs/recipe/cakephp.md#deployinit)
+* [deploy:run_migrations](/docs/recipe/cakephp.md#deployrun_migrations)
+* [deploy:publish](/docs/recipe/common.md#deploypublish)
 
 

@@ -10,7 +10,6 @@ namespace Deployer\Logger;
 use Deployer\Component\ProcessRunner\Printer;
 use Deployer\Host\Host;
 use Deployer\Logger\Handler\HandlerInterface;
-use Symfony\Component\Process\Process;
 
 class Logger
 {
@@ -52,12 +51,6 @@ class Logger
             return;
         }
 
-        if ($type === Process::ERR) {
-            $line = "[{$host->getAlias()}] err $line";
-        } else {
-            $line = "[{$host->getAlias()}] $line";
-        }
-
-        $this->log($line);
+        $this->log("[{$host->getAlias()}] $line");
     }
 }

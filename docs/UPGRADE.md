@@ -1,16 +1,18 @@
 # Upgrade from 6.x to 7.x
 
-1. Change `hostname` to `alias`.
-2. Change `real_hostname` to `hostname`.
-3. Change `user` to `remote_user`.
+## Step 1: Update deploy.php
+1. Change config `hostname` to `alias`.
+2. Change config `real_hostname` to `hostname`.
+3. Change config `user` to `remote_user`.
 4. Update `host()` definitions:
     1. Add `set` prefix to all setters: `identityFile` -> `setIdentityFile` or `set('identify_file')`
-    2. Update `addSshOption('UserKnownHostsFile', '/dev/null')` to `setSshArguments(['-o UserKnownHostsFile=/dev/null']);`
+    2. Update `host(...)->addSshOption('UserKnownHostsFile', '/dev/null')` to `host(...)->setSshArguments(['-o UserKnownHostsFile=/dev/null']);`
     3. Replace _stage_ with labels, i.e.
        ```php
        host('deployer.org')
            ->set('labels', ['stage' => 'prod']); 
        ```
+       When deploying use instead of `dep deploy prod` use `dep deploy stage=prod`. 
     4. `alias()` is deleted, `host()` itself sets alias and hostname, to override hostname use `setHostname()`.
 5. Update `task()` definitions.
     1. Replace `onRoles()` with `select()`:
@@ -49,10 +51,41 @@
        - deploy:publish
    
      deploy:vendors:
-       script: 'cd {{release_path}} && echo {{bin/composer}} {{composer_options}} 2>&1'
-   ```  
+       - run: 'cd {{release_path}} && echo {{bin/composer}} {{composer_options}} 2>&1'
+   ``` 
+8. Rename task `success` to `deploy:success`.
+9. Verbosity function (`isDebug()`, etc) deleted. Use `output()->isDebug()` instead.
+10. runLocally() commands are executed relative to the recipe file directory. This behaviour can be overridden via an environment variable:
+    ```
+    DEPLOYER_ROOT=. vendor/bin/dep taskname`
+    ```
+11. Replace `local()` tasks with combination of `once()` and `runLocally()` func.
+12. Replace `locateBinaryPath()` with `which()` func.
 
-# Upgrade from 5.x to 6.x
+## Step 2: Deploy
+
+Since the release history numbering is not compatible between v6 and v7, you need to specify the `release_name` manually for the first time. Otherwise you start with release 1.
+
+1. Find out next release name (ssh to the host, `ls` releases dir, find the biggest number). Example: `42`.
+2. Deploy with release_name:
+   ```
+   dep deploy -o release_name=43
+   ```
+
+:::note
+In case a rollback is needed, manually change the `current` symlink:
+```
+ln -nfs releases/42 current
+```
+:::
+
+:::note
+In case there are multiple hosts with different release names, you should create a `{{deploy_path}}/.dep/latest_release` file in each host with the current release number of that particular host.
+:::
+
+## Other versions
+
+### Upgrade from 5.x to 6.x
 
 1. Changed branch option priority
 
@@ -91,7 +124,7 @@
     
     * `set('env', 'prod');` → `set('symfony_env', 'prod');`
 
-# Upgrade from 4.x to 5.x
+### Upgrade from 4.x to 5.x
 
 1. Servers to Hosts
    
@@ -165,7 +198,7 @@
    * `onlyOnStage` to `onStage`
    
 
-# Upgrade from 3.x to 4.x
+### Upgrade from 3.x to 4.x
 
 1. Namespace for functions
 
@@ -197,7 +230,7 @@
 
    Due to changes in release management, the new cleanup task will ignore any prior releases deployed with 3.x.  These will need to be manually removed after migrating to and successfully releasing via 4.x.
 
-# Upgrade from 2.x to 3.x
+### Upgrade from 2.x to 3.x
 
 1. ### `->path('...')`
 
